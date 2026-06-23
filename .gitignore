@@ -3,3 +3,4 @@
 __pycache__/
 outputs/.matplotlib/
 outputs/llm_triples_cache.jsonl
+generate_report.py

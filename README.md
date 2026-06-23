@@ -12,20 +12,18 @@ The corpus is stored in `dataset/`, and the generated evaluation artifacts are s
 - Implements GraphRAG retrieval by linking questions to graph entities, traversing related graph facts, and retrieving supporting source chunks.
 - Runs the same benchmark questions through Flat RAG and GraphRAG.
 - Uses an LLM judge to compare answer quality, grounding, and hallucination risk.
-- Generates a final Markdown report from benchmark artifacts.
 
 ## Repository Structure
 
 ```text
 .
-├── dataset/                         # Raw text corpus
-├── outputs/                         # Generated triples, graph, benchmark, and report
-├── graphrag_lab.py                  # Main GraphRAG pipeline
-├── generate_report.py               # Report generator
-├── LAB DAY 19.md                    # Original lab instruction
-├── requirements-lab-day19.txt       # Python dependencies
-├── .env_example                     # Environment variable template
-└── README.md
+|-- dataset/                         # Raw text corpus
+|-- outputs/                         # Generated triples, graph, benchmark, and metadata
+|-- graphrag_lab.py                  # Main GraphRAG pipeline
+|-- LAB DAY 19.md                    # Original lab instruction
+|-- requirements-lab-day19.txt       # Python dependencies
+|-- .env_example                     # Environment variable template
+`-- README.md
 ```
 
 ## Requirements
@@ -78,20 +76,6 @@ The script will:
 6. Judge both systems with an LLM.
 7. Write all artifacts to `outputs/`.
 
-## Generate the Report
-
-After running the pipeline, generate the final report:
-
-```powershell
-python generate_report.py
-```
-
-The report will be written to:
-
-```text
-outputs/REPORT_DAY_19.md
-```
-
 ## Main Outputs
 
 | File | Description |
@@ -101,7 +85,6 @@ outputs/REPORT_DAY_19.md
 | `outputs/knowledge_graph.graphml` | GraphML export for graph inspection |
 | `outputs/benchmark_results.csv` | Flat RAG vs GraphRAG benchmark results |
 | `outputs/run_metadata.json` | Runtime metadata and pipeline statistics |
-| `outputs/REPORT_DAY_19.md` | Final lab report |
 
 ## Optional Commands
 
@@ -135,4 +118,4 @@ The offline mode is intended only for code validation. The official lab result s
 
 Flat RAG retrieves relevant chunks directly from the text corpus. GraphRAG first maps the question to graph entities, retrieves multi-hop graph facts, then uses those graph signals to select supporting source text. Both systems answer the same benchmark questions and are evaluated by an LLM judge using the same criteria.
 
-The final comparison is available in `outputs/benchmark_results.csv` and summarized in `outputs/REPORT_DAY_19.md`.
+The final comparison is available in `outputs/benchmark_results.csv`.
