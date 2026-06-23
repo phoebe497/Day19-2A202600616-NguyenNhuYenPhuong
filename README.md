@@ -1,92 +1,138 @@
-# Lab Day 19 - GraphRAG với Tech Company Corpus
+# Lab Day 19: GraphRAG System
 
-## Mục tiêu
+This repository implements Lab Day 19: building a GraphRAG pipeline from a raw text corpus and comparing it with a Flat RAG baseline.
 
-Repo này triển khai đúng luồng bài Lab Day 19:
+The corpus is stored in `dataset/`, and the generated evaluation artifacts are stored in `outputs/`.
 
-1. Dùng LLM đọc corpus và trích xuất triples.
-2. Xây dựng knowledge graph bằng NetworkX.
-3. Query GraphRAG bằng duyệt graph 2-hop rồi textualize evidence cho LLM trả lời.
-4. So sánh với Flat RAG dùng ChromaDB vector store.
-5. Dùng LLM-as-judge để chấm câu trả lời và ghi nhận hallucination.
+## Features
 
-## Cài đặt
+- Extracts entity-relation triples from raw text with an OpenAI-compatible LLM.
+- Builds a NetworkX knowledge graph from extracted triples.
+- Creates a Flat RAG baseline with ChromaDB, with a TF-IDF fallback.
+- Implements GraphRAG retrieval by linking questions to graph entities, traversing related graph facts, and retrieving supporting source chunks.
+- Runs the same benchmark questions through Flat RAG and GraphRAG.
+- Uses an LLM judge to compare answer quality, grounding, and hallucination risk.
+- Generates a final Markdown report from benchmark artifacts.
+
+## Repository Structure
+
+```text
+.
+├── dataset/                         # Raw text corpus
+├── outputs/                         # Generated triples, graph, benchmark, and report
+├── graphrag_lab.py                  # Main GraphRAG pipeline
+├── generate_report.py               # Report generator
+├── LAB DAY 19.md                    # Original lab instruction
+├── requirements-lab-day19.txt       # Python dependencies
+├── .env_example                     # Environment variable template
+└── README.md
+```
+
+## Requirements
+
+- Python 3.10 or newer
+- An OpenAI-compatible chat completions API key
+
+Install dependencies:
 
 ```powershell
 python -m pip install -r requirements-lab-day19.txt
 ```
 
-## Cấu hình API
+## Configuration
 
-Copy `.env_example` thành `.env`, sau đó điền key/base URL thật:
+Copy `.env_example` to `.env`:
 
 ```powershell
 Copy-Item .env_example .env
 ```
 
-Các biến quan trọng:
+Fill in the required values:
 
-- `OPENAI_API_KEY`: API key của bạn.
-- `OPENAI_BASE_URL`: base URL của provider OpenAI-compatible.
-- `OPENAI_MODEL`: model dùng để extract triples và sinh câu trả lời.
-- `OPENAI_JUDGE_MODEL`: model dùng để judge Flat RAG vs GraphRAG.
-- `GRAPHRAG_CHUNK_CHARS`: số ký tự mỗi chunk khi gửi cho LLM.
-- `GRAPHRAG_MAX_CHUNKS_PER_DOC`: số chunk tối đa mỗi document.
+```env
+OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_JUDGE_MODEL=gpt-4o-mini
+OPENAI_TEMPERATURE=0
+GRAPHRAG_CHUNK_CHARS=6000
+GRAPHRAG_MAX_CHUNKS_PER_DOC=3
+GRAPHRAG_EST_SECONDS_PER_LLM_CALL=10
+```
 
-## Chạy pipeline đúng yêu cầu lab
+## Run the Pipeline
+
+Run the full GraphRAG experiment:
 
 ```powershell
 python graphrag_lab.py
 ```
 
-`graphrag_lab.py` chỉ chạy pipeline và benchmark. Script sẽ sinh các artifact kỹ thuật trong `outputs/`:
+The script will:
 
-- `triples.csv`: triples đã extract.
-- `knowledge_graph.png`: ảnh đồ thị tri thức.
-- `knowledge_graph.graphml`: graph để mở bằng công cụ ngoài.
-- `benchmark_results.csv`: bảng so sánh 20 câu hỏi.
-- `run_metadata.json`: metadata của lần chạy.
-- `llm_triples_cache.jsonl`: cache triples để lần chạy sau đỡ tốn token.
+1. Load documents from `dataset/`.
+2. Extract LLM triples from the corpus.
+3. Build a NetworkX knowledge graph.
+4. Build the Flat RAG retrieval index.
+5. Run the Flat RAG vs GraphRAG benchmark.
+6. Judge both systems with an LLM.
+7. Write all artifacts to `outputs/`.
 
-Trong lúc chạy, script in log theo từng bước: load dataset, gọi LLM extract triples theo document/chunk, build graph, chạy từng câu benchmark và ghi artifact. Nếu chạy lâu, nhìn log sẽ biết đang kẹt ở bước nào.
+## Generate the Report
 
-Trước khi gọi LLM, script cũng in ước tính runtime:
-
-```text
-Runtime estimate: chunks=..., cached=..., to_extract=..., benchmark_llm_calls=60, total_llm_calls=..., ~... minutes
-```
-
-Ước tính này dùng biến `GRAPHRAG_EST_SECONDS_PER_LLM_CALL` trong `.env`. Nếu provider của bạn nhanh/chậm hơn, chỉnh biến này để estimate sát hơn.
-
-
-## Smoke test không cần API key
-
-Chỉ dùng để kiểm tra code chạy được, không phải kết quả chính của bài lab:
+After running the pipeline, generate the final report:
 
 ```powershell
-python graphrag_lab.py --mode offline
+python generate_report.py
 ```
 
-## Query thử một câu
+The report will be written to:
 
-Sau khi đã chạy pipeline ít nhất một lần và có `outputs/triples.csv`, dùng:
+```text
+outputs/REPORT_DAY_19.md
+```
+
+## Main Outputs
+
+| File | Description |
+| --- | --- |
+| `outputs/triples.csv` | Extracted knowledge graph triples |
+| `outputs/knowledge_graph.png` | Top-node knowledge graph visualization |
+| `outputs/knowledge_graph.graphml` | GraphML export for graph inspection |
+| `outputs/benchmark_results.csv` | Flat RAG vs GraphRAG benchmark results |
+| `outputs/run_metadata.json` | Runtime metadata and pipeline statistics |
+| `outputs/REPORT_DAY_19.md` | Final lab report |
+
+## Optional Commands
+
+Ask a single GraphRAG question from existing artifacts:
 
 ```powershell
 python graphrag_lab.py --ask "What is VinFast's relationship with Vingroup and Pham Nhat Vuong?"
 ```
 
-Lệnh này chỉ load graph từ `outputs/triples.csv` rồi trả lời, không rebuild graph, không chạy benchmark và không gọi LLM indexing. Nếu muốn dùng LLM để diễn đạt câu trả lời từ evidence đã retrieve, thêm:
+Use the configured LLM to write the ad-hoc answer:
 
 ```powershell
 python graphrag_lab.py --ask "What is VinFast's relationship with Vingroup and Pham Nhat Vuong?" --ask-use-llm
 ```
 
-Nếu muốn rebuild pipeline xong rồi mới hỏi, dùng:
+Redraw the graph visualization from existing triples:
 
 ```powershell
-python graphrag_lab.py --ask "What is VinFast's relationship with Vingroup and Pham Nhat Vuong?" --ask-after-build
+python graphrag_lab.py --redraw-graph
 ```
 
-## Ghi chú chi phí
+Run a local smoke test without an API key:
 
-Lần chạy LLM đầu tiên tốn token nhiều nhất vì phải extract triples. Các lần sau dùng cache trong `outputs/llm_triples_cache.jsonl`. Nếu muốn giảm chi phí, giảm `GRAPHRAG_MAX_CHUNKS_PER_DOC` hoặc `GRAPHRAG_CHUNK_CHARS` trong `.env`.
+```powershell
+python graphrag_lab.py --mode offline
+```
+
+The offline mode is intended only for code validation. The official lab result should be produced with `--mode llm`, which is the default mode.
+
+## Method Summary
+
+Flat RAG retrieves relevant chunks directly from the text corpus. GraphRAG first maps the question to graph entities, retrieves multi-hop graph facts, then uses those graph signals to select supporting source text. Both systems answer the same benchmark questions and are evaluated by an LLM judge using the same criteria.
+
+The final comparison is available in `outputs/benchmark_results.csv` and summarized in `outputs/REPORT_DAY_19.md`.

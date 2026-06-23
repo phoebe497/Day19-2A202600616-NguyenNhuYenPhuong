@@ -4,11 +4,13 @@
 
 ## 1. Nghiên cứu ngắn
 
-**Entity Extraction.** LLM phân biệt node và thuộc tính bằng schema. Node là đối tượng có thể liên kết độc lập như công ty, cá nhân, chính sách, khu vực; thuộc tính là giá trị mô tả node như tỷ lệ %, doanh thu, năm, số xe giao. Trong pipeline chính, LLM đọc từng chunk của corpus và trả về triples JSON gồm `source`, `relation`, `target`, type, evidence và confidence.
+**Entity & Relation Extraction.** LLM đọc từng chunk của corpus và trích xuất triples JSON gồm `source`, `relation`, `target`, entity type, evidence và confidence. Triples là lớp cấu trúc giúp chuyển văn bản tự do thành knowledge graph có thể truy vấn theo quan hệ.
 
-**Graph Construction và Deduplication.** Nếu không khử trùng lặp, một thực thể có thể bị tách thành nhiều node, ví dụ `Tesla`, `TSLA`, `Tesla Motors`. Pipeline chuẩn hóa relation, gộp edge trùng theo cặp `source-relation-target`, cộng dồn weight/confidence và lưu evidence theo document.
+**Graph Construction và Deduplication.** Nếu không khử trùng lặp, một thực thể có thể bị tách thành nhiều node, ví dụ `Tesla`, `TSLA`, `Tesla Motors`. Pipeline chuẩn hóa relation, gộp edge trùng theo cặp `source-relation-target`, cộng dồn weight/confidence và lưu source document cho mỗi edge.
 
-**Query Answering.** Flat RAG dùng ChromaDB để tìm chunk gần nhất bằng vector search. GraphRAG tìm entity chính trong câu hỏi, đi qua graph trong phạm vi 2-hop, textualize evidence rồi gửi evidence đó cho LLM sinh câu trả lời. Điểm khác biệt là Flat RAG tìm đoạn văn tương tự, còn GraphRAG đi theo quan hệ có cấu trúc.
+**Indexing.** Flat RAG chia tài liệu thành chunks và tạo vector index bằng ChromaDB nếu có, fallback sang TF-IDF cosine nếu môi trường chưa cài ChromaDB.
+
+**GraphRAG Query Answering.** GraphRAG link câu hỏi vào graph entities, duyệt subgraph 2-hop, xếp hạng graph facts, sau đó dùng các source documents mà graph chạm tới để rerank chunks gốc theo câu hỏi. LLM chỉ được trả lời dựa trên graph facts và graph-guided supporting chunks này.
 
 ## 2. Môi trường và công cụ
 
@@ -24,28 +26,28 @@
 3. Chia tài liệu thành chunk theo `GRAPHRAG_CHUNK_CHARS` và `GRAPHRAG_MAX_CHUNKS_PER_DOC`.
 4. Dùng LLM để trích xuất triples từ từng chunk, có cache tại `outputs/llm_triples_cache.jsonl`.
 5. Xây dựng knowledge graph bằng NetworkX.
-6. Query GraphRAG bằng entity extraction, graph traversal 2-hop, textualization và LLM answer.
-7. Query Flat RAG bằng ChromaDB retrieval và LLM answer.
-8. Dùng LLM-as-judge để chấm hai hệ thống.
+6. Query GraphRAG bằng entity linking, graph traversal 2-hop, graph fact ranking và graph-guided chunk reranking.
+7. Query Flat RAG bằng vector retrieval.
+8. Dùng LLM-as-judge để chấm hai hệ thống theo factuality, evidence use và hallucination risk.
 
 ## 4. Kết quả indexing
 
 - Documents loaded: 70
 - Documents skipped noisy full content: doc_50, doc_60
-- Graph nodes: 3228
-- Graph edges/triples: 6294
-- Runtime: 465.003 seconds
+- Graph nodes: 3208
+- Graph edges/triples: 6287
+- Runtime: 986.053 seconds
 - Mode: `llm`
 - Flat RAG backend: `chromadb-tfidf`
 - LLM calls: 60
-- Estimated LLM tokens: 63433
+- Estimated LLM tokens: 138210
 - Estimated LLM calls trước khi chạy: 60 (extract mới 0 chunks, benchmark 60 calls), ước tính khoảng 10.0 phút.
 
 Top relation counts:
 
 | Relation | Count |
 |---|---:|
-| MENTIONED_IN | 3714 |
+| MENTIONED_IN | 3709 |
 | BARRIER_TO_ADOPTION | 45 |
 | HAS_MARKET_SHARE | 40 |
 | SUPPORTED_BY_POLICY | 40 |
@@ -60,60 +62,77 @@ Top relation counts:
 
 ## 5. Benchmark Flat RAG vs GraphRAG
 
-Bảng đầy đủ nằm tại `outputs/benchmark_results.csv`. Tóm tắt:
+Bảng đầy đủ nằm tại `outputs/benchmark_results.csv`.
+
+- FlatRAG wins: 7
+- GraphRAG wins: 10
+- GraphRAG hallucination flags: 4
 
 | # | Question | Flat score | GraphRAG score | Flat hallucination | Graph hallucination | Verdict |
 |---:|---|---:|---:|---|---|---|
-| 1 | Why did Tesla's Q1 2024 U.S. EV market share fall, and which brands grew more than 50% year over year? | 8 | 3 | Không | Có | FlatRAG: Flat RAG trả lời đúng cả hai ý chính từ bằng chứng: Tesla giảm thị phần do doanh số Mỹ giảm 13,3% và liệt kê đúng 9 hãng tăng hơn 50% YoY. GraphRAG chỉ nêu đúng con số thị phần nhưng lại nói không đủ bằng chứng dù nguồn doc_2 đã nêu rõ nguyên nhân và danh sách các hãng, nên có dấu hiệu bỏ sót bằng chứng và trả lời không đầy đủ. |
-| 2 | What Q3 2024 delivery and revenue results did VinFast report, and who backed its funding? | 2 | 9 | Có | Không | GraphRAG: GraphRAG trả lời đúng số liệu Q3/2024: VinFast giao 21.912 xe và doanh thu 12.326.537 triệu VND (511,6 triệu USD). Nó chỉ bỏ sót phần nguồn vốn được hậu thuẫn bởi Phạm Nhật Vượng/các công ty liên quan và Vingroup, nhưng không bịa. Flat RAG lại nói không có số liệu giao xe/doanh thu dù bằng chứng có, nên thiếu chính xác và có nguy cơ bỏ sót nghiêm trọng. |
-| 3 | How are ZEV regulations linked to U.S. EV sales share and model availability? | 9 | 3 | Không | Có | FlatRAG: FlatRAG trả lời đúng và đầy đủ hơn: nêu rõ ZEV regulations liên quan đến thị phần EV mới 5% so với 1,3% ở bang không có ZEV, nhiều hơn ít nhất 13 mẫu EV, và chiếm khoảng 2/3 doanh số EV Mỹ năm 2020. GraphRAG chỉ nói chung chung về tầm quan trọng của sự sẵn có mẫu xe và thêm chi tiết về thiếu chip/doanh số EV tăng, nhưng chi tiết này không trả lời trực tiếp câu hỏi và làm loãng trọng tâm; phần về EV tăng mạnh bất chấp thiếu chip không được dùng để chứng minh liên kết ZEV. |
-| 4 | How does public and workplace charging availability relate to EV uptake in top U.S. metropolitan areas? | 8 | 2 | Không | Có | FlatRAG: Flat RAG trả lời đúng trọng tâm: sạc công cộng và sạc nơi làm việc nhiều hơn đi kèm mức chấp nhận EV cao hơn ở các vùng đô thị lớn, và nêu đúng các số liệu từ bằng chứng. GraphRAG bỏ lỡ bằng chứng trực tiếp về mối liên hệ này và thay vào đó chỉ nói chung chung về chi phí đầu tư hạ tầng, nên có nguy cơ bịa/diễn giải sai do thiếu dẫn chứng. |
-| 5 | What consumer charging concerns could slow EV adoption according to the corpus? | 8 | 7 | Không | Không | FlatRAG: FlatRAG bám sát corpus hơn vì nêu đúng các lo ngại về sạc: thiếu hạ tầng, khó sạc thuận tiện như đổ xăng, lo ngại khi đi xa, và vấn đề tiêu chuẩn/tương thích mạng sạc. GraphRAG đúng ý chính nhưng bỏ sót các điểm quan trọng trong evidence về sự tiện lợi và long trips. |
-| 6 | Which company surpassed Tesla as the largest EV producer, and where are Chinese EV brands expanding? | 8 | 5 | Không | Có | FlatRAG: FlatRAG trả lời đúng ý chính: BYD vượt Tesla và các thương hiệu EV Trung Quốc đang mở rộng sang các thị trường mới nổi ở Đông Nam Á, nhất là Thái Lan, đúng với bằng chứng. GraphRAG đúng phần BYD vượt Tesla nhưng phần nơi mở rộng lại quá chung chung, không nêu được Đông Nam Á/thị trường mới nổi như evidence, nên kém chính xác hơn và có dấu hiệu suy diễn. |
-| 7 | How does the Inflation Reduction Act connect to EV leasing incentives or battery investment? | 7 | 8 | Không | Không | GraphRAG: GraphRAG trả lời sát câu hỏi hơn vì nêu rõ ưu đãi leasing $7.500 và liên hệ với đầu tư pin/EV; FlatRAG đúng về phần đầu tư nhưng bỏ sót điểm leasing. Cả hai đều dựa trên bằng chứng cung cấp, nhưng GraphRAG bao quát đầy đủ hơn. |
-| 8 | How did Cadillac, Mercedes, BMW, Audi, and Ford perform in Q1 2024 EV sales relative to Tesla? | 8 | 5 | Không | Có | FlatRAG: FlatRAG trả lời đúng phần lớn số liệu từ bằng chứng: Cadillac +499,2%, Ford +86,1%, Mercedes +66,9%, BMW +62,6%, Audi +28,8% và Tesla -13,3%, kèm thị phần 51,3%. GraphRAG đúng về Cadillac/Ford/Tesla nhưng bỏ sót Mercedes, BMW, Audi dù câu hỏi yêu cầu so sánh cả năm hãng; thêm nữa phần nói không có bằng chứng cho ba hãng này là sai vì doc_2 đã nêu rõ số liệu. |
-| 9 | What is VinFast's relationship with Vingroup and Pham Nhat Vuong? | 8 | 6 | Không | Có | FlatRAG: Flat RAG bám sát bằng chứng hơn: nêu đúng VinFast là công ty con của Vingroup và có hỗ trợ tài chính từ Phạm Nhật Vượng/các công ty liên quan. GraphRAG sai khi nói ông Vượng là ‘nhà sáng lập kiêm CEO của VinFast’; bằng chứng chỉ cho thấy ông là Founder and Chief Executive Officer của một ngữ cảnh trong báo cáo, nhưng không đủ để khẳng định đó là CEO của VinFast. Ngoài ra, chi tiết khoản vay 35 nghìn tỷ VND chỉ là một phần của hỗ trợ, nên câu trả lời GraphRAG vừa lệch vừa hẹp hơn. |
-| 10 | What are the main barriers to EV adoption mentioned across Deloitte, EPA, and McKinsey style sources? | 7 | 6 | Không | Có | FlatRAG: Flat RAG bám sát hơn các nguồn được đưa: chi phí/khả năng chi trả, hạ tầng sạc, lo ngại phạm vi di chuyển và khác biệt chính sách đều có trong evidence. GraphRAG có vài ý đúng nhưng thêm các điểm như chia rẽ chính trị, mất cân đối nhu cầu vùng và ‘monthly payment gap’ không được hỏi trực tiếp theo kiểu Deloitte/EPA/McKinsey, nên rủi ro hallucination cao hơn. |
-| 11 | Why is Germany's EV charging infrastructure investment significant for consumer sentiment? | 9 | 2 | Không | Không | FlatRAG: FlatRAG bám sát bằng chứng: Đức đầu tư 2,8 tỷ USD và bắt buộc trạm xăng có điểm sạc, điều này quan trọng vì trực tiếp giảm hai rào cản lớn nhất của người tiêu dùng là lo ngại quãng đường và thiếu hạ tầng sạc, nên tác động tích cực đến tâm lý người dùng. GraphRAG quá dè dặt và bỏ sót bằng chứng nêu rõ liên hệ với consumer sentiment. |
-| 12 | How did Polestar describe its strategic partners and major EV business risks? | 9 | 5 | Không | Không | FlatRAG: FlatRAG bám sát câu hỏi hơn: mô tả đúng đối tác chiến lược chính là Volvo Cars và Geely trong mô hình asset-light, và tổng hợp đầy đủ các rủi ro vận hành/sản xuất EV từ bằng chứng. GraphRAG có dùng chứng cứ thật nhưng lệch trọng tâm: thêm Xingji Meizu, servicing/software/charging và rủi ro chấp nhận EV thị trường, trong khi bỏ sót các rủi ro lớn được nêu rõ như chậm ramp-up, thiếu công suất, sai dự báo nhu cầu, giảm giá cạnh tranh và lead time linh kiện. |
-| 13 | What first-quarter 2024 themes were reported for Zeekr? | 8 | 2 | Không | Không | FlatRAG: FlatRAG bám sát bằng chứng doc_14 về khởi đầu mạnh sau IPO, hiệu quả vận hành/tài chính và ra mắt ZEEKR 001 2024; có thêm ý về định vị BEV cao cấp cũng phù hợp phần giới thiệu công ty. Tuy nhiên câu trả lời hơi diễn giải rộng thành “chủ đề”. GraphRAG quá bảo thủ, dựa vào bằng chứng không đúng tài liệu tài chính quý 1 và bỏ sót các ý nêu rõ trong doc_14. |
-| 14 | What did Nikola report in first-quarter 2023 results? | 8 | 6 | Không | Không | FlatRAG: Cả hai đều trả lời rằng không đủ bằng chứng, phù hợp với tư liệu. FlatRAG bám sát việc các nguồn không chứa thông tin về Nikola/Q1 2023 nên dùng chứng cứ an toàn hơn. GraphRAG cũng không bịa nhưng suy ra từ một nguồn chỉ nói định giá Nikola, nên kém liên quan hơn. |
-| 15 | What investment level did U.S. EV investments reach, and what does that imply for the sector? | 3 | 2 | Không | Có | FlatRAG: Cả hai câu trả lời đều không tìm ra mức đầu tư EV của Mỹ nên không trả lời đúng trọng tâm. FlatRAG bám sát bằng chứng hơn khi thừa nhận thiếu dữ liệu cụ thể, dù suy luận còn yếu vì dẫn chứng rất nhiễu. GraphRAG cũng nói thiếu dữ liệu nhưng lại suy diễn sang mở rộng sản xuất pin và số xe EV sản xuất, những chi tiết không trả lời câu hỏi về mức đầu tư và hàm ý cho ngành, nên rủi ro suy diễn/hallucination cao hơn. |
-| 16 | How are Chinese battery companies investing in Europe and the United States? | 10 | 1 | Không | Có | FlatRAG: FlatRAG trả lời đúng và bám sát chứng cứ: đầu tư mạnh ở châu u (CATL có nhà máy ở Đức, xây ở Hungary, thúc đẩy greenfield 2022) và ở Mỹ sau IRA (CATL-Ford, Gotion Michigan). GraphRAG nói thiếu bằng chứng dù bộ chứng cứ chuẩn có nêu rất rõ, lại chèn chi tiết không có trong evidence được đưa như BEV Mỹ +26%, châu u -1% và LG/SK mở rộng, nên sai và có rủi ro bịa. |
-| 17 | What does the EPA say about battery manufacturing emissions versus lifetime EV emissions? | 9 | 1 | Không | Không | FlatRAG: FlatRAG bám đúng bằng chứng EPA ở doc_8: phát thải sản xuất EV/pin thường cao hơn, nhưng phát thải trọn vòng đời của EV vẫn thấp hơn xe xăng; cũng nêu đúng các yếu tố phụ thuộc. GraphRAG sai vì bỏ qua bằng chứng EPA liên quan trực tiếp và kết luận không đủ thông tin dù evidence FlatRAG đã đủ. |
-| 18 | How does the Bipartisan Infrastructure Law address EV charging concerns? | 8 | 6 | Không | Không | FlatRAG: FlatRAG bám sát bằng chứng hơn: nêu đúng khoản 7,5 tỷ USD để mở rộng mạng sạc toàn quốc và liên hệ trực tiếp tới lo ngại về tiện lợi sạc/đi đường dài. GraphRAG cũng dựa trên chứng cứ thật nhưng thêm chi tiết Build a Better Grid và 13 tỷ USD cho lưới điện, phần này ít trực tiếp trả lời câu hỏi về lo ngại sạc EV nên suy luận kém tập trung hơn. |
-| 19 | What does Goldman Sachs say about why EV sales are slowing? | 8 | 7 | Không | Không | FlatRAG: Cả hai câu trả lời đều đúng khi nói không có bằng chứng về nhận định của Goldman Sachs. FlatRAG bám sát chứng cứ hơn vì chỉ ra rõ dữ liệu liên quan là mức quan tâm mua EV giảm và lo ngại hạ tầng sạc từ Pew. GraphRAG cũng tránh bịa đặt nhưng diễn giải thêm về ưu đãi thuế và kỳ vọng doanh số tương lai, hơi xa câu hỏi gốc. |
-| 20 | How do dealer sentiment reports describe uncertainty in the EV and auto market? | 9 | 4 | Không | Có | FlatRAG: FlatRAG bám sát chứng cứ CADSI Q2/Q3: thị trường yếu, bất định thị trường/kinh tế/chính trị, EV chỉ nhích nhẹ nhưng vẫn thấp. GraphRAG chỉ dùng được 1 ý trực tiếp về dealer sentiment; các dẫn chứng còn lại là vĩ mô chung hoặc xu hướng EV không nói về báo cáo sentiment của đại lý, nên suy luận lỏng và có nguy cơ gán ghép. |
+| 1 | Why did Tesla's Q1 2024 U.S. EV market share fall, and which brands grew more than 50% year over year? | 9 | 9 | Không | Không | Tie: Cả hai câu trả lời đều đúng về факт chính: Tesla giảm doanh số 13,3%, thị phần giảm từ 61,7% xuống 51,3%, và 9 hãng tăng trên 50% YoY gồm BMW, Cadillac, Ford, Hyundai, Kia, Lexus, Mercedes, Rivian, VinFast. FlatRAG bám sát chứng cứ hơn và đủ để trả lời câu hỏi. GraphRAG cũng đúng, dùng thêm bối cảnh thị trường chậm lại/quý giảm để nối lý do, nhưng phần này hơi mở rộng hơn nhu cầu câu hỏi. Không thấy bịa đặt ở cả hai. |
+| 2 | What Q3 2024 delivery and revenue results did VinFast report, and who backed its funding? | 3 | 9 | Không | Không | GraphRAG: GraphRAG trả lời đúng đủ hai ý: Q3/2024 VinFast giao 21.912 xe, doanh thu 511,6 triệu USD, và nêu đúng nguồn hậu thuẫn từ nhà sáng lập/Phạm Nhật Vượng và Vingroup. FlatRAG dùng đúng chứng cứ về tài trợ nhưng bỏ sót số liệu giao xe và doanh thu dù có trong tài liệu, nên độ đầy đủ và suy luận kém hơn. |
+| 3 | How are ZEV regulations linked to U.S. EV sales share and model availability? | 10 | 10 | Không | Không | Tie: Cả hai câu trả lời đều bám sát bằng chứng doc_1: bang có ZEV đạt 5% thị phần EV mới so với 1,3% ở bang không có ZEV, có nhiều hơn khoảng 13 mẫu EV, và đóng góp khoảng 2/3 doanh số EV Mỹ năm 2020 dù dưới 1/3 doanh số xe hạng nhẹ. Lập luận đúng và không thấy bịa đặt; GraphRAG chỉ dư dẫn chứng không liên quan nhưng không làm sai nội dung. |
+| 4 | How does public and workplace charging availability relate to EV uptake in top U.S. metropolitan areas? | 8 | 9 | Không | Không | GraphRAG: Cả hai câu trả lời đều đúng về mặt факt và bám sát bằng chứng cốt lõi từ doc_1: thị phần EV 10%, 935 sạc công cộng/một triệu dân, 430 sạc nơi làm việc/một triệu dân, và chênh lệch lớn với phần còn lại của dân số Mỹ. Tuy nhiên, GraphRAG chặt chẽ hơn vì chỉ dùng các mệnh đề được hỗ trợ trực tiếp để kết luận quan hệ giữa hạ tầng sạc công cộng/nơi làm việc và mức tiếp nhận EV. FlatRAG cũng đúng nhưng thêm chi tiết về việc bộ sạc Level 2/3 tập trung ở MSA để củng cố lập luận, đây là bằng chứng liên quan nhưng gián tiếp hơn với câu hỏi so với bộ số liệu chính. |
+| 5 | What consumer charging concerns could slow EV adoption according to the corpus? | 8 | 9 | Không | Không | GraphRAG: Cả hai câu trả lời đều bám bằng chứng. FlatRAG đúng về thiếu hạ tầng, bất tiện khi sạc, nhu cầu chuẩn hóa/tương thích và yếu tố kinh tế của hệ sạc, nhưng có một ý như “đủ nhanh” chỉ được hỗ trợ gián tiếp. GraphRAG đầy đủ hơn vì nêu rõ hạ tầng không theo kịp nhu cầu, sạc kém tiện hơn đổ xăng, lo ngại hết pin/range anxiety, và xu hướng người mua trì hoãn chuyển sang EV; các ý này được hỗ trợ trực tiếp bởi doc_70 và doc_9/doc_69. Không thấy bịa đặt đáng kể ở cả hai. |
+| 6 | Which company surpassed Tesla as the largest EV producer, and where are Chinese EV brands expanding? | 10 | 9 | Không | Không | FlatRAG: Cả hai câu trả lời đều đúng: BYD vượt Tesla, và các hãng EV Trung Quốc mở rộng sang thị trường mới nổi, đặc biệt Đông Nam Á như Thái Lan. FlatRAG bám sát đúng chứng cứ [1][2] và trả lời trực tiếp hơn. GraphRAG cũng đúng nhưng kèm thêm nhiều chứng cứ dư thừa, trong đó có đoạn về Tesla vẫn là top-selling brand toàn cầu năm 2023 nên làm tăng nhẹ rủi ro nhiễu, dù không thành hallucination. |
+| 7 | How does the Inflation Reduction Act connect to EV leasing incentives or battery investment? | 7 | 6 | Không | Có | FlatRAG: FlatRAG bám sát bằng chứng: IRA gắn với hỗ trợ EV nói chung và thúc đẩy đầu tư pin/EV, đồng thời thừa nhận không có chi tiết rõ về ưu đãi thuê EV. GraphRAG nêu tốt phần đầu tư pin, nhưng thêm chi tiết về tín dụng thuế 7.500 USD và điều kiện mua/thuê xe không trả lời đúng trọng tâm leasing và vượt quá bằng chứng được cung cấp về leasing, nên rủi ro suy diễn/hallucination cao hơn. |
+| 8 | How did Cadillac, Mercedes, BMW, Audi, and Ford perform in Q1 2024 EV sales relative to Tesla? | 10 | 10 | Không | Không | Tie: Cả hai câu trả lời đều đúng với bằng chứng: Tesla giảm 13,3% YoY, còn Cadillac (+499,2%), Ford (+86,1%), Mercedes (+66,9%), BMW (+62,6%) và Audi (+28,8%) đều tăng mạnh hơn. Cả hai cũng dùng đúng bằng chứng để so sánh tương đối với Tesla; suy luận đa bước là tối thiểu và chính xác. GraphRAG trích hơi thừa nguồn, nhưng không thêm nội dung sai hay bịa. |
+| 9 | What is VinFast's relationship with Vingroup and Pham Nhat Vuong? | 9 | 10 | Không | Không | GraphRAG: Cả hai câu trả lời đều đúng và bám sát bằng chứng. FlatRAG trả lời đúng quan hệ cốt lõi: VinFast là công ty con của Vingroup và nhận tài trợ từ Phạm Nhật Vượng cùng các công ty liên quan. Tuy nhiên, GraphRAG đầy đủ hơn vì nêu thêm các quan hệ tài chính quan trọng với Vingroup: khoản vay tối đa 35 nghìn tỷ VND và chuyển đổi tối đa 80 nghìn tỷ VND khoản vay thành cổ phần ưu đãi tại VFTP, đồng thời vẫn xác nhận đúng vai trò nhà sáng lập/CEO của Phạm Nhật Vượng. Không thấy bịa đặt ở cả hai. |
+| 10 | What are the main barriers to EV adoption mentioned across Deloitte, EPA, and McKinsey style sources? | 9 | 2 | Không | Có | FlatRAG: FlatRAG bám sát câu hỏi hơn, dùng đúng bằng chứng về giá/khả năng chi trả, hạ tầng sạc, bất định chính sách và giá nhiên liệu thấp từ các nguồn kiểu Deloitte/EY/Goldman. GraphRAG lệch trọng tâm: chủ yếu suy diễn từ trang EPA về “myths” môi trường và phạm vi, trong khi bằng chứng lại nhấn mạnh EV thường sạch hơn và đủ đáp ứng nhu cầu di chuyển; vì vậy có rủi ro diễn giải quá mức và bỏ sót rào cản chi phí/chính sách quan trọng. |
+| 11 | Why is Germany's EV charging infrastructure investment significant for consumer sentiment? | 8 | 9 | Không | Không | GraphRAG: Cả hai câu trả lời đều đúng và bám sát bằng chứng: đầu tư của Đức quan trọng vì giảm lo ngại về quãng đường và thiếu điểm sạc, từ đó cải thiện tâm lý người tiêu dùng. GraphRAG nhỉnh hơn vì dùng bằng chứng trực tiếp hơn về consumer sentiment và nối tốt hơn từ hạ tầng sạc -> tăng niềm tin -> hỗ trợ doanh số EV. FlatRAG cũng đúng nhưng có phần khái quát hơn và dựa nhiều vào các đoạn trùng lặp. |
+| 12 | How did Polestar describe its strategic partners and major EV business risks? | 9 | 8 | Không | Không | FlatRAG: Cả hai câu trả lời đều bám sát bằng chứng và tổng hợp đúng các rủi ro chính quanh mô hình asset-light, phụ thuộc Volvo Cars/Geely, năng lực sản xuất, chuỗi cung ứng, dự báo nhu cầu và áp lực giảm giá. FlatRAG nhỉnh hơn vì trả lời trực tiếp hơn đúng trọng tâm “đối tác chiến lược được mô tả thế nào” và “rủi ro EV lớn”, không thêm ý ngoài trọng tâm. GraphRAG cũng đúng và có suy luận đa bước tốt, nhưng đưa thêm rủi ro mẫu xe mới không được thị trường đón nhận; ý này có trong bằng chứng nhưng hơi lệch khỏi trọng tâm đối tác chiến lược/rủi ro vận hành EV chính nên kém gọn hơn. Không thấy bịa đặt rõ ràng ở cả hai. |
+| 13 | What first-quarter 2024 themes were reported for Zeekr? | 7 | 9 | Không | Không | GraphRAG: GraphRAG đầy đủ và bám chứng cứ hơn: nêu rõ giao xe Q1, tăng trưởng doanh thu/lợi nhuận gộp, biên lợi nhuận xe, vị thế phân khúc >200.000 RMB và định hướng tiếp theo. FlatRAG đúng một phần nhưng bỏ sót nhiều ý quan trọng và thêm chi tiết IPO/ra mắt công ty đại chúng như một chủ đề Q1 dù xảy ra vào tháng 5/2024. |
+| 14 | What did Nikola report in first-quarter 2023 results? | 2 | 9 | Không | Không | GraphRAG: FlatRAG bám sát bằng chứng nhưng trả lời thiếu vì bỏ sót nguồn liên quan trực tiếp đến Nikola. GraphRAG dùng đúng chứng cứ doc_20, tổng hợp được nhiều ý chính của báo cáo quý 1/2023 và suy luận đa bước tốt; chỉ hơi dài và có vài chi tiết thiên về kế hoạch tương lai nhưng vẫn được nguồn hỗ trợ. |
+| 15 | What investment level did U.S. EV investments reach, and what does that imply for the sector? | 6 | 7 | Không | Không | GraphRAG: Cả hai đều trả lời rằng không đủ bằng chứng, phù hợp với ngữ liệu. Tuy nhiên, GraphRAG dùng chứng cứ sát chủ đề EV hơn và giải thích rõ rằng số liệu nổi bật là của Trung Quốc chứ không phải Mỹ; dù có suy diễn nhẹ về hàm ý cho ngành, mức độ vẫn an toàn. FlatRAG cũng an toàn nhưng chứng cứ phần lớn lạc đề và hỗ trợ yếu. |
+| 16 | How are Chinese battery companies investing in Europe and the United States? | 10 | 7 | Không | Có | FlatRAG: FlatRAG bám rất sát chứng cứ: đầu tư nhà máy ở châu u, châu u là điểm đến lớn nhất, và vào Mỹ sau IRA với CATL-Ford và Gotion Michigan. GraphRAG cũng đúng phần châu u và Mỹ, nhưng thêm ý BYD/CATL đầu tư tích hợp dọc để bảo đảm khoáng sản ngoài Trung Quốc; chứng cứ chỉ nói xu hướng đầu tư khoáng sản nói chung, không gắn riêng với châu u và Mỹ, nên có suy diễn thừa so với câu hỏi. |
+| 17 | What does the EPA say about battery manufacturing emissions versus lifetime EV emissions? | 8 | 9 | Không | Không | GraphRAG: Cả hai câu trả lời đều đúng theo EPA: phát thải sản xuất pin làm tăng phát thải chế tạo EV, nhưng tổng phát thải vòng đời của EV thường vẫn thấp hơn xe xăng. FlatRAG dùng chứng cứ đúng nhưng có chỗ diễn đạt hơi lệch khi nói thanh xanh là toàn bộ phát thải chế tạo EV; thực ra EPA nói thanh xanh chỉ là phần pin, còn thanh cam là phần chế tạo còn lại và cuối vòng đời. GraphRAG bám sát chứng cứ EPA hơn, nối tốt quan hệ giữa phát thải sản xuất pin, phát thải vận hành và tổng vòng đời, nên nhỉnh hơn. |
+| 18 | How does the Bipartisan Infrastructure Law address EV charging concerns? | 9 | 8 | Không | Không | FlatRAG: Cả hai câu trả lời đều bám sát bằng chứng về khoản 7,5 tỷ USD để mở rộng mạng lưới sạc EV. FlatRAG trả lời trực tiếp đúng trọng tâm câu hỏi. GraphRAG thêm ý về nâng cấp lưới điện và Build a Better Grid, có căn cứ trong bằng chứng nhưng hơi mở rộng sang lo ngại tác động EV lên lưới điện, không phải trọng tâm chính của “charging concerns”, nên kém chính xác hơn một chút. |
+| 19 | What does Goldman Sachs say about why EV sales are slowing? | 8 | 6 | Không | Có | FlatRAG: FlatRAG bám sát câu hỏi và nêu đúng rằng không có bằng chứng nào cho thấy Goldman Sachs giải thích nguyên nhân doanh số EV chậm lại. Dù có suy luận thêm từ Pew/Cox, câu trả lời vẫn không gán sai cho Goldman Sachs. GraphRAG cũng nhận ra thiếu bằng chứng trực tiếp, nhưng lại đưa ra các lý do từ tâm lý đại lý và điều kiện kinh tế như thể gần với câu hỏi, trong khi không hề chứng minh đó là nhận định của Goldman Sachs, nên rủi ro gán ghép/hallucination cao hơn. |
+| 20 | How do dealer sentiment reports describe uncertainty in the EV and auto market? | 8 | 9 | Không | Không | GraphRAG: Cả hai câu trả lời đều bám sát bằng chứng và trả lời đúng ý về bất định trong thị trường ô tô/EV. FlatRAG đúng nhưng hơi dàn trải và có một vài chi tiết Q3/EV không trực tiếp làm rõ bản chất của “uncertainty”. GraphRAG mạnh hơn vì tổng hợp đa bước tốt hơn: nối lãi suất, mùa bầu cử/khí hậu chính trị, tác động tới người tiêu dùng và đại lý, rồi kết luận rằng bất định gây thận trọng/paralysis và làm xấu doanh số, tâm lý. Không thấy bịa đặt rõ ràng ở cả hai. |
 
-## 6. Trường hợp Flat RAG yếu hoặc hallucinate
+## 6. Phân tích failure modes
+
+Nếu Flat RAG thắng GraphRAG ở một số câu, kết quả đó không có nghĩa là ý tưởng GraphRAG sai. Nó thường cho thấy câu hỏi thuộc dạng fact lookup nằm gọn trong một chunk, hoặc GraphRAG chưa lấy lại đủ supporting text gốc.
+
+Các failure modes cần theo dõi:
+
+- **Super-nodes**: node quá rộng như `China`, `United States`, `EV`, `market` có nhiều cạnh và dễ kéo retrieval sang context nhiễu.
+- **Disconnected components**: nếu LLM extract thiếu bridge entity/relation, graph bị tách thành các đảo nhỏ và traversal không tới được evidence đúng.
+- **Poor textualization**: nếu chỉ trả lời từ triples, các danh sách, số liệu và sắc thái trong văn bản gốc dễ bị mất.
+
+Phiên bản pipeline hiện tại giảm rủi ro này bằng cách dùng graph để tìm graph facts/source documents, sau đó rerank chunks gốc bằng TF-IDF và marker scoring như `Q1`, năm, phần trăm, market share, charging, investment trước khi đưa evidence cho LLM.
+
+## 7. Trường hợp Flat RAG yếu hoặc hallucinate
 
 Các dòng dưới đây dựa trên verdict và cờ hallucination trong bảng benchmark.
 
 | Question | GraphRAG evidence edge |
 |---|---|
-| Why did Tesla's Q1 2024 U.S. EV market share fall, and which brands grew more than 50% year over year? | Tesla -[HAS_MARKET_SHARE]-> 65% of US EV purchases in 2022 <br> Tesla -[HAS_MARKET_SHARE]-> 51.3% of US EV market in Q1 2024 <br> BYD -[COMPETES_WITH]-> Tesla <br> Tesla -[HAS_MARKET_SHARE]-> 55% of US EV purchases in 2023 |
-| What Q3 2024 delivery and revenue results did VinFast report, and who backed its funding? | VinFast -[REPORTED_REVENUE]-> US$511.6 million in Q3 2024 <br> VinFast -[TARGETS_ANNUAL_DELIVERIES]-> 80,000 vehicles in 2024 <br> VinFast -[ACHIEVED_YOY_DELIVERY_GROWTH]-> 115% year-over-year in Q3 2024 <br> VinFast -[ACHIEVED_YOY_REVENUE_GROWTH]-> 49.3% year-over-year in Q3 2024 |
+| Why did Tesla's Q1 2024 U.S. EV market share fall, and which brands grew more than 50% year over year? | Tesla -[YEAR_OVER_YEAR_SALES_CHANGE]-> -13.3% in US Q1 2024 <br> Tesla -[REPORTED_AVERAGE_TRANSACTION_PRICE]-> $52,315 in Q1 2024 <br> Tesla -[AVERAGE_TRANSACTION_PRICE_CHANGE]-> -13.5% year over year in Q1 2024 <br> Tesla -[HAS_MARKET_SHARE]-> 51.3% of US EV market in Q1 2024 |
+| What Q3 2024 delivery and revenue results did VinFast report, and who backed its funding? | VinFast -[REPORTED_REVENUE]-> US$511.6 million in Q3 2024 <br> VinFast -[ACHIEVED_YOY_REVENUE_GROWTH]-> 49.3% year-over-year in Q3 2024 <br> VinFast -[ACHIEVED_YOY_DELIVERY_GROWTH]-> 115% year-over-year in Q3 2024 <br> VinFast -[REPORTED_VEHICLE_DELIVERIES]-> 21,912 EVs in Q3 2024 |
 | How are ZEV regulations linked to U.S. EV sales share and model availability? | ZEV regulations -[ESSENTIAL_TO]-> EV market growth <br> EV market growth -[IMPACTED_BY]-> chip shortage |
-| How does public and workplace charging availability relate to EV uptake in top U.S. metropolitan areas? | Charging infrastructure -[REQUIRES_INVESTMENT]-> Multi-billion-dollar capital investments <br> Charging infrastructure implementation -[REQUIRES]-> Multi-billion-dollar capital investments |
-| What consumer charging concerns could slow EV adoption according to the corpus? | EV adoption -[BARRIER_TO_ADOPTION]-> limited driving range <br> EV adoption -[BARRIER_TO_ADOPTION]-> lack of charging infrastructure <br> EV adoption -[BARRIER_TO_ADOPTION]-> high purchase cost <br> EV adoption -[BARRIER_TO_ADOPTION]-> availability of public charging stations |
-| Which company surpassed Tesla as the largest EV producer, and where are Chinese EV brands expanding? | BYD -[SURPASSED]-> Tesla <br> BYD -[COMPETES_WITH]-> Tesla <br> Tesla -[WAS_LARGEST_EXPORTER_FROM]-> China <br> Elon Musk -[CEO_OF]-> Tesla |
-| How does the Inflation Reduction Act connect to EV leasing incentives or battery investment? | Inflation Reduction Act -[SUPPORTED_INVESTMENT_IN]-> battery factories <br> Inflation Reduction Act -[OFFERS_INCENTIVE]-> $7,500 EV incentive <br> Inflation Reduction Act -[OFFERS_EV_BATTERY_TAX_CREDIT]-> US$7,500 <br> Inflation Reduction Act -[BOOSTED_EXPECTED_SOLAR_DEPLOYMENT]-> 46% compared to pre-IRA projections |
-| How did Cadillac, Mercedes, BMW, Audi, and Ford perform in Q1 2024 EV sales relative to Tesla? | Ford -[COMPETES_WITH]-> Tesla <br> Ford -[RANKED_BY_EV_SALES_VOLUME]-> second-highest behind Tesla in Q1 2024 <br> Tesla -[INCREASED_Q3_EV_SALES_BY]-> 40%–60% from Q3 2022 to Q3 2023 <br> BMW -[INCREASED_Q3_EV_SALES_BY]-> 40%–60% from Q3 2022 to Q3 2023 |
+| How does public and workplace charging availability relate to EV uptake in top U.S. metropolitan areas? | Top 10 metropolitan areas by EV uptake -[HAS_WORKPLACE_CHARGER_DENSITY]-> 430 workplace chargers per million population <br> EV growth -[LINKED_TO]-> Public and workplace charging availability <br> Top 10 metropolitan areas by EV uptake -[HAS_EV_SHARE]-> 10% electric share <br> Top 10 metropolitan areas by EV uptake -[HAS_PUBLIC_CHARGER_DENSITY]-> 935 public chargers per million population |
+| What consumer charging concerns could slow EV adoption according to the corpus? | Insufficient EV Charging Infrastructure Growth -[BARRIER_TO_ADOPTION]-> EV adoption <br> EV adoption -[BARRIER_TO_ADOPTION]-> limited driving range <br> EV adoption -[BARRIER_TO_ADOPTION]-> lack of charging infrastructure <br> EV adoption -[BARRIER_TO_ADOPTION]-> high purchase cost |
+| Which company surpassed Tesla as the largest EV producer, and where are Chinese EV brands expanding? | BYD -[SURPASSED]-> Tesla <br> Tesla -[WAS_LARGEST_EXPORTER_FROM]-> China <br> BYD -[COMPETES_WITH]-> Tesla <br> Tesla -[HAS_EXPORT_SHARE]-> 40.25 percent of EV exports from China between January and April 2023 |
+| How does the Inflation Reduction Act connect to EV leasing incentives or battery investment? | Inflation Reduction Act -[CATALYZED]-> investment and job creation in American electric vehicle manufacturing <br> Inflation Reduction Act -[SUPPORTED_INVESTMENT_IN]-> battery factories <br> Inflation Reduction Act -[ACCELERATED]-> U.S. electric vehicle and battery manufacturing markets <br> Inflation Reduction Act -[SUPPORTED_INVESTMENT_IN]-> Rivian EV factory in Georgia |
+| How did Cadillac, Mercedes, BMW, Audi, and Ford perform in Q1 2024 EV sales relative to Tesla? | Ford -[RANKED_BY_EV_SALES_VOLUME]-> second-highest behind Tesla in Q1 2024 <br> Cadillac -[YEAR_OVER_YEAR_EV_SALES_GROWTH]-> 499.2% in Q1 2024 <br> Tesla -[YEAR_OVER_YEAR_SALES_CHANGE]-> -13.3% in US Q1 2024 <br> Ford -[YEAR_OVER_YEAR_EV_SALES_GROWTH]-> 86.1% in Q1 2024 |
 | What is VinFast's relationship with Vingroup and Pham Nhat Vuong? | Pham Nhat Vuong -[FOUNDER_OF]-> VinFast <br> Vingroup -[PROVIDES_LOANS_TO]-> VinFast subsidiaries in Vietnam up to VND35 trillion through end of 2026 <br> VinFast -[RELIES_ON_SUPPORT_FROM]-> Vingroup <br> VinFast -[ASSOCIATED_WITH]-> Vingroup affiliates |
-| What are the main barriers to EV adoption mentioned across Deloitte, EPA, and McKinsey style sources? | EPA emissions targets -[AIMED_AT_BOOSTING]-> EV adoption <br> EV adoption -[BARRIER_TO_ADOPTION]-> cost <br> EV adoption -[BARRIER_TO_ADOPTION]-> limited driving range <br> EV adoption -[BARRIER_TO_ADOPTION]-> lack of charging infrastructure |
+| What are the main barriers to EV adoption mentioned across Deloitte, EPA, and McKinsey style sources? | EPA -[PROVIDES]-> Beyond Tailpipe Emissions Calculator <br> EPA -[COLLABORATES_WITH]-> Department of Energy <br> Department of Energy -[PROVIDES]-> Beyond Tailpipe Emissions Calculator <br> Department of Energy -[OFFERS]-> EV Pro Lite Tool |
 
-## 7. Deliverables
+## 8. Deliverables
 
 - Source code pipeline: `graphrag_lab.py`
+- Report generator: `generate_report.py`
 - Environment template: `.env_example`
-- Knowledge graph image: `outputs/knowledge_graph.png`
-- GraphML file: `outputs/knowledge_graph.graphml`
+- Knowledge graph top-40 image: `outputs/knowledge_graph.png`
+- GraphML top-40 visualization subset: `outputs/knowledge_graph.graphml`
 - Triples: `outputs/triples.csv`
 - Benchmark table: `outputs/benchmark_results.csv`
 - Run metadata: `outputs/run_metadata.json`
 - LLM extraction cache: `outputs/llm_triples_cache.jsonl`
 
-## 8. Cách chạy
+## 9. Cách chạy
 
 Chạy pipeline:
 
@@ -133,7 +152,3 @@ Smoke test không cần API key:
 python graphrag_lab.py --mode offline
 python generate_report.py
 ```
-
-## 9. Phân tích chi phí
-
-Chi phí phụ thuộc vào số chunk gửi cho LLM. Script có cache nên lần chạy sau sẽ tái sử dụng triples đã extract. Nếu muốn giảm chi phí, giảm `GRAPHRAG_MAX_CHUNKS_PER_DOC` hoặc `GRAPHRAG_CHUNK_CHARS`; nếu muốn tăng độ phủ corpus, tăng hai giá trị đó.

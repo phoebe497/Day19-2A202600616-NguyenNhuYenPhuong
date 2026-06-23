@@ -1,369 +1,478 @@
 <?xml version='1.0' encoding='utf-8'?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key id="d4" for="edge" attr.name="relations" attr.type="string" />
-  <key id="d3" for="edge" attr.name="weight" attr.type="double" />
-  <key id="d2" for="node" attr.name="mentions" attr.type="long" />
-  <key id="d1" for="node" attr.name="label" attr.type="string" />
-  <key id="d0" for="node" attr.name="type" attr.type="string" />
-  <graph edgedefault="undirected">
-    <node id="RMB2,022.1 million in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">RMB2,022.1 million in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="LFP battery technology">
-      <data key="d0">Concept</data>
-      <data key="d1">LFP battery technology</data>
-      <data key="d2">12</data>
-    </node>
-    <node id="500,000 charging stations by 2030">
-      <data key="d0">Metric</data>
-      <data key="d1">500,000 charging stations by 2030</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="136,176 thousand U.S. dollars in first nine months 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">136,176 thousand U.S. dollars in first nine months 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="16.5 million units in 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">16.5 million units in 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="No. 7 factor affecting business">
-      <data key="d0">Metric</data>
-      <data key="d1">No. 7 factor affecting business</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="up to 95% by 2050 vs 1990 levels">
-      <data key="d0">Metric</data>
-      <data key="d1">up to 95% by 2050 vs 1990 levels</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="Global EV sales">
-      <data key="d0">Concept</data>
-      <data key="d1">Global EV sales</data>
-      <data key="d2">6</data>
-    </node>
-    <node id="11.9 percent of high-impact electric battery publications">
-      <data key="d0">Metric</data>
-      <data key="d1">11.9 percent of high-impact electric battery publications</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="RMB 2,022,106 thousand in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">RMB 2,022,106 thousand in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="49.3% year-over-year in Q3 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">49.3% year-over-year in Q3 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="40% in 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">40% in 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="237,400 large vans in 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">237,400 large vans in 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="372,504 thousand U.S. dollars in first nine months 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">372,504 thousand U.S. dollars in first nine months 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="RMB 3,000,793 thousand as of March 31, 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">RMB 3,000,793 thousand as of March 31, 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="one-third by 2030">
-      <data key="d0">Metric</data>
-      <data key="d1">one-third by 2030</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="American Airlines">
-      <data key="d0">Company</data>
-      <data key="d1">American Airlines</data>
-      <data key="d2">7</data>
-    </node>
-    <node id="No. 3 factor affecting business for franchised dealers">
-      <data key="d0">Metric</data>
-      <data key="d1">No. 3 factor affecting business for franchised dealers</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="Q1 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">Q1 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="capital requirements">
-      <data key="d0">Metric</data>
-      <data key="d1">capital requirements</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="153,904 thousand U.S. dollars in first nine months 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">153,904 thousand U.S. dollars in first nine months 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="2003">
-      <data key="d0">Metric</data>
-      <data key="d1">2003</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="more than 162,000 charging ports in 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">more than 162,000 charging ports in 2024</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="11.8% in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">11.8% in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="26.8 million vehicles in 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">26.8 million vehicles in 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="iShares">
-      <data key="d0">Company</data>
-      <data key="d1">iShares</data>
-      <data key="d2">10</data>
-    </node>
-    <node id="China's second largest baijiu producer">
-      <data key="d0">Metric</data>
-      <data key="d1">China's second largest baijiu producer</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="U.S. electricity consumption by light-duty electric vehicle types">
-      <data key="d0">Metric</data>
-      <data key="d1">U.S. electricity consumption by light-duty electric vehicle types</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="early 2020">
-      <data key="d0">Metric</data>
-      <data key="d1">early 2020</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="truck production pause at end of May 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">truck production pause at end of May 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="0.6% for quarter ended September 30, 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">0.6% for quarter ended September 30, 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="40 percent of global electric car stock">
-      <data key="d0">Metric</data>
-      <data key="d1">40 percent of global electric car stock</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="2,036,525 thousand U.S. dollars current liabilities as of September 30 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">2,036,525 thousand U.S. dollars current liabilities as of September 30 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="World's largest car exporter in 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">World's largest car exporter in 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="around 80% of EV drivers">
-      <data key="d0">Metric</data>
-      <data key="d1">around 80% of EV drivers</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="Brexit and COVID-19">
-      <data key="d0">Concept</data>
-      <data key="d1">Brexit and COVID-19</data>
-      <data key="d2">8</data>
-    </node>
-    <node id="1.6% global market share">
-      <data key="d0">Metric</data>
-      <data key="d1">1.6% global market share</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="80,000 vehicles in 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">80,000 vehicles in 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="2x global average EV consideration in 2021">
-      <data key="d0">Metric</data>
-      <data key="d1">2x global average EV consideration in 2021</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="40.25 percent of EV exports from China between January and April 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">40.25 percent of EV exports from China between January and April 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="80 percent of global cathode production">
-      <data key="d0">Metric</data>
-      <data key="d1">80 percent of global cathode production</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="2022">
-      <data key="d0">Metric</data>
-      <data key="d1">2022</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="RMB 2,086,933 thousand in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">RMB 2,086,933 thousand in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="27 markets">
-      <data key="d0">Metric</data>
-      <data key="d1">27 markets</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="RMB 6,318,535 thousand in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">RMB 6,318,535 thousand in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="beyond 30% NDC bookings">
-      <data key="d0">Metric</data>
-      <data key="d1">beyond 30% NDC bookings</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="more than 315,000 vehicles sold annually from 2018 to 2020">
-      <data key="d0">Metric</data>
-      <data key="d1">more than 315,000 vehicles sold annually from 2018 to 2020</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="33,059 vehicles in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">33,059 vehicles in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="General Motors">
-      <data key="d0">Company</data>
-      <data key="d1">General Motors</data>
-      <data key="d2">8</data>
-    </node>
-    <node id="$7,500 EV incentive">
-      <data key="d0">Metric</data>
-      <data key="d1">$7,500 EV incentive</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="RMB8,174.1 million in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">RMB8,174.1 million in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="10 million EV units in 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">10 million EV units in 2024</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="55% vs 1990 levels">
-      <data key="d0">Metric</data>
-      <data key="d1">55% vs 1990 levels</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="BYD">
-      <data key="d0">Company</data>
-      <data key="d1">BYD</data>
-      <data key="d2">53</data>
-    </node>
-    <node id="50.9% of U.S. EV market in Q4 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">50.9% of U.S. EV market in Q4 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="59 percent in 2022">
-      <data key="d0">Metric</data>
-      <data key="d1">59 percent in 2022</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="around USD 6,000 in 2022-2023">
-      <data key="d0">Metric</data>
-      <data key="d1">around USD 6,000 in 2022-2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="9.49 million units">
-      <data key="d0">Metric</data>
-      <data key="d1">9.49 million units</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="RMB 2,057,093 thousand in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">RMB 2,057,093 thousand in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="REE Automotive">
-      <data key="d0">Company</data>
-      <data key="d1">REE Automotive</data>
-      <data key="d2">38</data>
-    </node>
-    <node id="Taking a road trip 49%">
-      <data key="d0">Metric</data>
-      <data key="d1">Taking a road trip 49%</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="+26% in 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">+26% in 2024</data>
-      <data key="d2">1</data>
-    </node>
-    <node id="51% in 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">51% in 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="Inflation Reduction Act">
-      <data key="d0">Policy</data>
-      <data key="d1">Inflation Reduction Act</data>
-      <data key="d2">18</data>
-    </node>
-    <node id="60 percent in 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">60 percent in 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="19.9 percent at year-end 2023">
-      <data key="d0">Metric</data>
-      <data key="d1">19.9 percent at year-end 2023</data>
-      <data key="d2">0</data>
-    </node>
-    <node id="14.0% in Q1 2024">
-      <data key="d0">Metric</data>
-      <data key="d1">14.0% in Q1 2024</data>
-      <data key="d2">0</data>
-    </node>
-    <edge source="LFP battery technology" target="BYD">
-      <data key="d3">1.89</data>
-      <data key="d4">REFINED_AND_IMPROVED</data>
-    </edge>
-    <edge source="16.5 million units in 2024" target="Global EV sales">
-      <data key="d3">0.98</data>
-      <data key="d4">PROJECTED_TO_REACH</data>
-    </edge>
-    <edge source="Global EV sales" target="40% in 2023">
-      <data key="d3">0.98</data>
-      <data key="d4">GREW_BY</data>
-    </edge>
-    <edge source="American Airlines" target="beyond 30% NDC bookings">
-      <data key="d3">0.9</data>
-      <data key="d4">PREFERRED_STATUS_THRESHOLD</data>
-    </edge>
-    <edge source="$7,500 EV incentive" target="Inflation Reduction Act">
-      <data key="d3">0.99</data>
-      <data key="d4">OFFERS_INCENTIVE</data>
-    </edge>
-    <edge source="BYD" target="around USD 6,000 in 2022-2023">
-      <data key="d3">0.96</data>
-      <data key="d4">PROFIT_PER_EV_SOLD</data>
-    </edge>
-  </graph>
-</graphml>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d5" for="edge" attr.name="sources" attr.type="string"/>
+<key id="d4" for="edge" attr.name="relations" attr.type="string"/>
+<key id="d3" for="edge" attr.name="weight" attr.type="double"/>
+<key id="d2" for="node" attr.name="mentions" attr.type="long"/>
+<key id="d1" for="node" attr.name="label" attr.type="string"/>
+<key id="d0" for="node" attr.name="type" attr.type="string"/>
+<graph edgedefault="undirected"><node id="2020">
+  <data key="d0">Entity</data>
+  <data key="d1">2020</data>
+  <data key="d2">3</data>
+</node>
+<node id="China">
+  <data key="d0">Region</data>
+  <data key="d1">China</data>
+  <data key="d2">144</data>
+</node>
+<node id="Vingroup">
+  <data key="d0">Company</data>
+  <data key="d1">Vingroup</data>
+  <data key="d2">2</data>
+</node>
+<node id="Ford">
+  <data key="d0">Company</data>
+  <data key="d1">Ford</data>
+  <data key="d2">30</data>
+</node>
+<node id="EVs">
+  <data key="d0">Entity</data>
+  <data key="d1">EVs</data>
+  <data key="d2">30</data>
+</node>
+<node id="$60.4 billion in 2023">
+  <data key="d0">Entity</data>
+  <data key="d1">$60.4 billion in 2023</data>
+  <data key="d2">1</data>
+</node>
+<node id="Charging infrastructure">
+  <data key="d0">Concept</data>
+  <data key="d1">Charging infrastructure</data>
+  <data key="d2">10</data>
+</node>
+<node id="Europe">
+  <data key="d0">Region</data>
+  <data key="d1">Europe</data>
+  <data key="d2">42</data>
+</node>
+<node id="United States">
+  <data key="d0">Region</data>
+  <data key="d1">United States</data>
+  <data key="d2">115</data>
+</node>
+<node id="48% by 2030">
+  <data key="d0">Entity</data>
+  <data key="d1">48% by 2030</data>
+  <data key="d2">7</data>
+</node>
+<node id="Shanghai Gigafactory">
+  <data key="d0">Entity</data>
+  <data key="d1">Shanghai Gigafactory</data>
+  <data key="d2">4</data>
+</node>
+<node id="27% by 2030">
+  <data key="d0">Entity</data>
+  <data key="d1">27% by 2030</data>
+  <data key="d2">4</data>
+</node>
+<node id="Berkshire Hathaway">
+  <data key="d0">Entity</data>
+  <data key="d1">Berkshire Hathaway</data>
+  <data key="d2">7</data>
+</node>
+<node id="Elon Musk">
+  <data key="d0">Entity</data>
+  <data key="d1">Elon Musk</data>
+  <data key="d2">4</data>
+</node>
+<node id="LFP battery technology">
+  <data key="d0">Entity</data>
+  <data key="d1">LFP battery technology</data>
+  <data key="d2">10</data>
+</node>
+<node id="more than 162,000 charging ports in 2024">
+  <data key="d0">Entity</data>
+  <data key="d1">more than 162,000 charging ports in 2024</data>
+  <data key="d2">2</data>
+</node>
+<node id="Chinese EVs">
+  <data key="d0">Entity</data>
+  <data key="d1">Chinese EVs</data>
+  <data key="d2">6</data>
+</node>
+<node id="40%–60% from Q3 2022 to Q3 2023">
+  <data key="d0">Entity</data>
+  <data key="d1">40%–60% from Q3 2022 to Q3 2023</data>
+  <data key="d2">3</data>
+</node>
+<node id="publicly traded private firm">
+  <data key="d0">Entity</data>
+  <data key="d1">publicly traded private firm</data>
+  <data key="d2">2</data>
+</node>
+<node id="Tesla">
+  <data key="d0">Company</data>
+  <data key="d1">Tesla</data>
+  <data key="d2">81</data>
+</node>
+<node id="Hong Kong stock exchange">
+  <data key="d0">Entity</data>
+  <data key="d1">Hong Kong stock exchange</data>
+  <data key="d2">2</data>
+</node>
+<node id="$1.5 billion in 2023">
+  <data key="d0">Entity</data>
+  <data key="d1">$1.5 billion in 2023</data>
+  <data key="d2">1</data>
+</node>
+<node id="2% in 2019">
+  <data key="d0">Entity</data>
+  <data key="d1">2% in 2019</data>
+  <data key="d2">3</data>
+</node>
+<node id="BEVs">
+  <data key="d0">Entity</data>
+  <data key="d1">BEVs</data>
+  <data key="d2">10</data>
+</node>
+<node id="Tesla Model Y">
+  <data key="d0">Entity</data>
+  <data key="d1">Tesla Model Y</data>
+  <data key="d2">4</data>
+</node>
+<node id="more than 60,000 publicly accessible charging stations in 2024">
+  <data key="d0">Entity</data>
+  <data key="d1">more than 60,000 publicly accessible charging stations in 2024</data>
+  <data key="d2">2</data>
+</node>
+<node id="Seagull">
+  <data key="d0">Entity</data>
+  <data key="d1">Seagull</data>
+  <data key="d2">5</data>
+</node>
+<node id="Pham Nhat Vuong">
+  <data key="d0">Person</data>
+  <data key="d1">Pham Nhat Vuong</data>
+  <data key="d2">1</data>
+</node>
+<node id="Li Auto">
+  <data key="d0">Entity</data>
+  <data key="d1">Li Auto</data>
+  <data key="d2">6</data>
+</node>
+<node id="S&amp;P 500">
+  <data key="d0">Entity</data>
+  <data key="d1">S&amp;P 500</data>
+  <data key="d2">5</data>
+</node>
+<node id="17% in 2019">
+  <data key="d0">Entity</data>
+  <data key="d1">17% in 2019</data>
+  <data key="d2">5</data>
+</node>
+<node id="VinFast">
+  <data key="d0">Company</data>
+  <data key="d1">VinFast</data>
+  <data key="d2">45</data>
+</node>
+<node id="BMW">
+  <data key="d0">Company</data>
+  <data key="d1">BMW</data>
+  <data key="d2">11</data>
+</node>
+<node id="Decoupling From Foreign Adversarial Battery Dependence Act">
+  <data key="d0">Entity</data>
+  <data key="d1">Decoupling From Foreign Adversarial Battery Dependence Act</data>
+  <data key="d2">2</data>
+</node>
+<node id="General Motors">
+  <data key="d0">Company</data>
+  <data key="d1">General Motors</data>
+  <data key="d2">27</data>
+</node>
+<node id="Shenzhen">
+  <data key="d0">Entity</data>
+  <data key="d1">Shenzhen</data>
+  <data key="d2">4</data>
+</node>
+<node id="BYD">
+  <data key="d0">Company</data>
+  <data key="d1">BYD</data>
+  <data key="d2">53</data>
+</node>
+<node id="REE Automotive">
+  <data key="d0">Company</data>
+  <data key="d1">REE Automotive</data>
+  <data key="d2">38</data>
+</node>
+<node id="Brazil">
+  <data key="d0">Region</data>
+  <data key="d1">Brazil</data>
+  <data key="d2">6</data>
+</node>
+<node id="CATL">
+  <data key="d0">Company</data>
+  <data key="d1">CATL</data>
+  <data key="d2">21</data>
+</node>
+<edge source="2020" target="Tesla">
+  <data key="d3">0.98</data>
+  <data key="d4">FIRST_TURNED_PROFIT</data>
+  <data key="d5">doc_61</data>
+</edge>
+<edge source="China" target="Tesla">
+  <data key="d3">0.98</data>
+  <data key="d4">WAS_LARGEST_EXPORTER_FROM</data>
+  <data key="d5">doc_65</data>
+</edge>
+<edge source="China" target="United States">
+  <data key="d3">0.97</data>
+  <data key="d4">PLANS_OUTBOUND_INVESTMENT_RESTRICTIONS_ON</data>
+  <data key="d5">doc_25</data>
+</edge>
+<edge source="China" target="CATL">
+  <data key="d3">1.82</data>
+  <data key="d4">AMONG_LARGEST_BATTERY_PRODUCERS_IN|AMONG_LARGEST_EV_BATTERY_PRODUCERS_IN</data>
+  <data key="d5">doc_43</data>
+</edge>
+<edge source="China" target="Europe">
+  <data key="d3">0.84</data>
+  <data key="d4">EXPORTS_TO</data>
+  <data key="d5">doc_67</data>
+</edge>
+<edge source="China" target="Charging infrastructure">
+  <data key="d3">1.83</data>
+  <data key="d4">INVESTS_IN|INVESTED_IN</data>
+  <data key="d5">doc_69</data>
+</edge>
+<edge source="China" target="BEVs">
+  <data key="d3">2.8</data>
+  <data key="d4">HAS_ADVANCED_MARKET_FOR|HAS_ADVANCED_MARKET_IN</data>
+  <data key="d5">doc_28|doc_69</data>
+</edge>
+<edge source="China" target="48% by 2030">
+  <data key="d3">2.9299999999999997</data>
+  <data key="d4">PROJECTED_DOMESTIC_EV_MARKET_SHARE|PROJECTED_EV_ADOPTION|HAS_DOMESTIC_EV_MARKET_SHARE</data>
+  <data key="d5">doc_28</data>
+</edge>
+<edge source="China" target="17% in 2019">
+  <data key="d3">2.9</data>
+  <data key="d4">GREW_BEV_SALES_BY|BEV_SALES_GREW_BY|REPORTED_BEV_GROWTH</data>
+  <data key="d5">doc_28</data>
+</edge>
+<edge source="China" target="BYD">
+  <data key="d3">1.93</data>
+  <data key="d4">HEADQUARTERED_IN|TOP_SELLING_CAR_COMPANY_IN</data>
+  <data key="d5">doc_68</data>
+</edge>
+<edge source="China" target="BMW">
+  <data key="d3">0.91</data>
+  <data key="d4">EXPANDS_EXPORT_PRESENCE_FROM</data>
+  <data key="d5">doc_7</data>
+</edge>
+<edge source="China" target="Shenzhen">
+  <data key="d3">0.9</data>
+  <data key="d4">IMPORTANT_CENTER_IN</data>
+  <data key="d5">doc_56</data>
+</edge>
+<edge source="Vingroup" target="VinFast">
+  <data key="d3">0.98</data>
+  <data key="d4">RELIES_ON_SUPPORT_FROM</data>
+  <data key="d5">doc_13</data>
+</edge>
+<edge source="Ford" target="Tesla">
+  <data key="d3">3.48</data>
+  <data key="d4">COMPETES_WITH</data>
+  <data key="d5">doc_26|doc_64</data>
+</edge>
+<edge source="Ford" target="CATL">
+  <data key="d3">1.94</data>
+  <data key="d4">COLLABORATES_WITH</data>
+  <data key="d5">doc_65</data>
+</edge>
+<edge source="Ford" target="General Motors">
+  <data key="d3">0.93</data>
+  <data key="d4">OPEN_TO_PARTNERING_WITH</data>
+  <data key="d5">doc_15</data>
+</edge>
+<edge source="Ford" target="S&amp;P 500">
+  <data key="d3">0.97</data>
+  <data key="d4">MEMBER_OF</data>
+  <data key="d5">doc_68</data>
+</edge>
+<edge source="EVs" target="BYD">
+  <data key="d3">1.83</data>
+  <data key="d4">MANUFACTURES|SWITCHED_EARLY_TO</data>
+  <data key="d5">doc_64</data>
+</edge>
+<edge source="$60.4 billion in 2023" target="BYD">
+  <data key="d3">0.99</data>
+  <data key="d4">REPORTED_REVENUE</data>
+  <data key="d5">doc_61</data>
+</edge>
+<edge source="Europe" target="27% by 2030">
+  <data key="d3">0.97</data>
+  <data key="d4">PROJECTED_GLOBAL_EV_MARKET_SHARE</data>
+  <data key="d5">doc_28</data>
+</edge>
+<edge source="United States" target="VinFast">
+  <data key="d3">0.95</data>
+  <data key="d4">LISTED_ON</data>
+  <data key="d5">doc_68</data>
+</edge>
+<edge source="United States" target="REE Automotive">
+  <data key="d3">0.97</data>
+  <data key="d4">HAS_SUBSIDIARY_IN</data>
+  <data key="d5">doc_19</data>
+</edge>
+<edge source="United States" target="Chinese EVs">
+  <data key="d3">1.97</data>
+  <data key="d4">IMPOSED_TARIFF_ON</data>
+  <data key="d5">doc_43|doc_66</data>
+</edge>
+<edge source="United States" target="more than 162,000 charging ports in 2024">
+  <data key="d3">1.97</data>
+  <data key="d4">HAS_CHARGING_PORTS</data>
+  <data key="d5">doc_17|doc_3</data>
+</edge>
+<edge source="United States" target="more than 60,000 publicly accessible charging stations in 2024">
+  <data key="d3">1.97</data>
+  <data key="d4">HAS_PUBLIC_CHARGING_STATIONS</data>
+  <data key="d5">doc_17|doc_3</data>
+</edge>
+<edge source="United States" target="27% by 2030">
+  <data key="d3">1.89</data>
+  <data key="d4">PROJECTED_DOMESTIC_EV_MARKET_SHARE|HAS_DOMESTIC_EV_MARKET_SHARE</data>
+  <data key="d5">doc_28</data>
+</edge>
+<edge source="United States" target="2% in 2019">
+  <data key="d3">1.96</data>
+  <data key="d4">DECLINED_BEV_SALES_BY|BEV_MARKET_FELL_BY</data>
+  <data key="d5">doc_28</data>
+</edge>
+<edge source="United States" target="LFP battery technology">
+  <data key="d3">1.97</data>
+  <data key="d4">ORIGINATED_IN</data>
+  <data key="d5">doc_43|doc_66</data>
+</edge>
+<edge source="United States" target="General Motors">
+  <data key="d3">0.96</data>
+  <data key="d4">EXPANDS_CHARGING_NETWORK_IN</data>
+  <data key="d5">doc_61</data>
+</edge>
+<edge source="United States" target="Seagull">
+  <data key="d3">0.96</data>
+  <data key="d4">BLOCKED_FROM</data>
+  <data key="d5">doc_61</data>
+</edge>
+<edge source="United States" target="Li Auto">
+  <data key="d3">0.95</data>
+  <data key="d4">LISTED_ON</data>
+  <data key="d5">doc_68</data>
+</edge>
+<edge source="Shanghai Gigafactory" target="Tesla">
+  <data key="d3">0.94</data>
+  <data key="d4">MOST_PRODUCTIVE_HUB_OF</data>
+  <data key="d5">doc_63</data>
+</edge>
+<edge source="Berkshire Hathaway" target="BYD">
+  <data key="d3">3.87</data>
+  <data key="d4">OWNS_STAKE_IN|INVESTED_IN|REDUCED_STAKE_IN</data>
+  <data key="d5">doc_65|doc_7</data>
+</edge>
+<edge source="Elon Musk" target="Tesla">
+  <data key="d3">1.98</data>
+  <data key="d4">CEO_OF</data>
+  <data key="d5">doc_38|doc_61</data>
+</edge>
+<edge source="LFP battery technology" target="BYD">
+  <data key="d3">1.89</data>
+  <data key="d4">REFINED_AND_IMPROVED</data>
+  <data key="d5">doc_43|doc_66</data>
+</edge>
+<edge source="LFP battery technology" target="CATL">
+  <data key="d3">2.83</data>
+  <data key="d4">REFINED_AND_IMPROVED|ADVANCED</data>
+  <data key="d5">doc_43|doc_66</data>
+</edge>
+<edge source="40%–60% from Q3 2022 to Q3 2023" target="Tesla">
+  <data key="d3">0.95</data>
+  <data key="d4">INCREASED_Q3_EV_SALES_BY</data>
+  <data key="d5">doc_36</data>
+</edge>
+<edge source="40%–60% from Q3 2022 to Q3 2023" target="BMW">
+  <data key="d3">0.95</data>
+  <data key="d4">INCREASED_Q3_EV_SALES_BY</data>
+  <data key="d5">doc_36</data>
+</edge>
+<edge source="publicly traded private firm" target="BYD">
+  <data key="d3">0.94</data>
+  <data key="d4">OWNERSHIP_TYPE</data>
+  <data key="d5">doc_7</data>
+</edge>
+<edge source="Tesla" target="BYD">
+  <data key="d3">8.53</data>
+  <data key="d4">COMPETES_WITH|SURPASSED</data>
+  <data key="d5">doc_43|doc_61|doc_63|doc_64|doc_66</data>
+</edge>
+<edge source="Tesla" target="General Motors">
+  <data key="d3">1.58</data>
+  <data key="d4">COMPETES_WITH</data>
+  <data key="d5">doc_26|doc_64</data>
+</edge>
+<edge source="Tesla" target="BMW">
+  <data key="d3">0.95</data>
+  <data key="d4">COMPETES_WITH</data>
+  <data key="d5">doc_39</data>
+</edge>
+<edge source="Tesla" target="Li Auto">
+  <data key="d3">1.82</data>
+  <data key="d4">COMPETES_WITH</data>
+  <data key="d5">doc_43|doc_66</data>
+</edge>
+<edge source="Tesla" target="S&amp;P 500">
+  <data key="d3">0.97</data>
+  <data key="d4">MEMBER_OF</data>
+  <data key="d5">doc_68</data>
+</edge>
+<edge source="Tesla" target="Tesla Model Y">
+  <data key="d3">0.95</data>
+  <data key="d4">MANUFACTURES</data>
+  <data key="d5">doc_38</data>
+</edge>
+<edge source="Hong Kong stock exchange" target="BYD">
+  <data key="d3">1.87</data>
+  <data key="d4">LISTED_ON</data>
+  <data key="d5">doc_65|doc_7</data>
+</edge>
+<edge source="$1.5 billion in 2023" target="BYD">
+  <data key="d3">0.99</data>
+  <data key="d4">REPORTED_NET_PROFIT</data>
+  <data key="d5">doc_61</data>
+</edge>
+<edge source="Seagull" target="BYD">
+  <data key="d3">0.97</data>
+  <data key="d4">LAUNCHED</data>
+  <data key="d5">doc_61</data>
+</edge>
+<edge source="Pham Nhat Vuong" target="VinFast">
+  <data key="d3">0.99</data>
+  <data key="d4">FOUNDER_OF</data>
+  <data key="d5">doc_13</data>
+</edge>
+<edge source="BMW" target="BYD">
+  <data key="d3">1.79</data>
+  <data key="d4">COMPETES_WITH</data>
+  <data key="d5">doc_43|doc_66</data>
+</edge>
+<edge source="Decoupling From Foreign Adversarial Battery Dependence Act" target="BYD">
+  <data key="d3">0.98</data>
+  <data key="d4">FORBIDS_PROCUREMENT_FROM</data>
+  <data key="d5">doc_42</data>
+</edge>
+<edge source="Decoupling From Foreign Adversarial Battery Dependence Act" target="CATL">
+  <data key="d3">0.98</data>
+  <data key="d4">FORBIDS_PROCUREMENT_FROM</data>
+  <data key="d5">doc_42</data>
+</edge>
+<edge source="Shenzhen" target="BYD">
+  <data key="d3">0.94</data>
+  <data key="d4">COLLABORATED_WITH</data>
+  <data key="d5">doc_63</data>
+</edge>
+<edge source="BYD" target="Brazil">
+  <data key="d3">0.9</data>
+  <data key="d4">HAS_MANUFACTURING_FACILITIES_IN</data>
+  <data key="d5">doc_61</data>
+</edge>
+</graph></graphml>

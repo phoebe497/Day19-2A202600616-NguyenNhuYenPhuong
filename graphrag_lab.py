@@ -7,6 +7,7 @@ import json
 import math
 import os
 import re
+import textwrap
 import time
 from collections import Counter
 from dataclasses import dataclass
@@ -79,6 +80,10 @@ ENTITY_DEFINITIONS = {
     "NVIDIA": {
         "type": "Company",
         "aliases": ["NVIDIA", "Nvidia"],
+    },
+    "EPA": {
+        "type": "Organization",
+        "aliases": ["EPA", "US EPA", "U.S. EPA", "Environmental Protection Agency"],
     },
     "Mercedes-Benz": {
         "type": "Company",
@@ -198,7 +203,7 @@ ENTITY_DEFINITIONS = {
     },
     "United States": {
         "type": "Region",
-        "aliases": ["United States", "U.S.", "US EV market", "U.S. market"],
+        "aliases": ["United States", "U.S.", "US", "USA", "US EV market", "U.S. market"],
     },
     "China": {
         "type": "Region",
@@ -262,6 +267,25 @@ ENTITY_DEFINITIONS = {
             "chargers",
             "charging stations",
             "charge point",
+        ],
+    },
+    "Public and workplace charging availability": {
+        "type": "Concept",
+        "aliases": [
+            "public and workplace charging availability",
+            "public and workplace charging",
+            "workplace charging availability",
+        ],
+    },
+    "Top 10 metropolitan areas by EV uptake": {
+        "type": "Concept",
+        "aliases": [
+            "top 10 metropolitan areas by EV uptake",
+            "top U.S. metropolitan areas",
+            "top US metropolitan areas",
+            "metropolitan areas with the greatest electric vehicle uptake",
+            "metropolitan areas",
+            "EV uptake",
         ],
     },
     "Battery range": {
@@ -413,6 +437,28 @@ def clean_text(text: str) -> str:
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
+
+
+def normalize_entity_key(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", clean_text(text).lower())
+
+
+def canonicalize_entity_name(name: str) -> str:
+    cleaned = clean_text(name)
+    if not cleaned or cleaned.startswith(("doc:", "metric:")):
+        return cleaned
+    key = normalize_entity_key(cleaned)
+    for canonical, info in ENTITY_DEFINITIONS.items():
+        aliases = [canonical, *[str(alias) for alias in info.get("aliases", [])]]
+        if key in {normalize_entity_key(alias) for alias in aliases}:
+            return canonical
+    return cleaned
+
+
+def canonical_node_type(name: str, fallback: str = "Entity") -> str:
+    if name in ENTITY_DEFINITIONS:
+        return str(ENTITY_DEFINITIONS[name].get("type", fallback))
+    return fallback
 
 
 def probably_binary_or_pdf_garbage(text: str) -> bool:
@@ -782,21 +828,25 @@ def build_graph_from_llm_triples(triples: list[tuple[Document, Triple]]) -> nx.M
     graph = nx.MultiDiGraph()
     for doc, triple in triples:
         doc_node = f"doc:{doc.doc_id}"
+        source = canonicalize_entity_name(triple.source)
+        target = canonicalize_entity_name(triple.target)
+        source_type = canonical_node_type(source, triple.source_type)
+        target_type = canonical_node_type(target, triple.target_type)
         add_node(graph, doc_node, "Document", doc.doc_id, title=doc.title, link=doc.link)
-        add_node(graph, triple.source, triple.source_type, triple.source, mentions=0)
-        add_node(graph, triple.target, triple.target_type, triple.target, mentions=0)
+        add_node(graph, source, source_type, source, mentions=0)
+        add_node(graph, target, target_type, target, mentions=0)
         add_fact(
             graph,
-            triple.source,
+            source,
             triple.relation,
-            triple.target,
+            target,
             triple.evidence,
             doc.doc_id,
             doc.title,
             weight=max(0.25, triple.confidence),
         )
-        add_fact(graph, triple.source, "MENTIONED_IN", doc_node, doc.title, doc.doc_id, doc.title, 0.2)
-        add_fact(graph, triple.target, "MENTIONED_IN", doc_node, doc.title, doc.doc_id, doc.title, 0.2)
+        add_fact(graph, source, "MENTIONED_IN", doc_node, doc.title, doc.doc_id, doc.title, 0.2)
+        add_fact(graph, target, "MENTIONED_IN", doc_node, doc.title, doc.doc_id, doc.title, 0.2)
     return graph
 
 
@@ -818,8 +868,38 @@ def content_terms(text: str) -> list[str]:
     return [
         word
         for word in words
-        if word not in STOP_WORDS and len(word) > 2 and word not in {"evs", "ev"}
+        if word not in STOP_WORDS and (len(word) > 2 or re.fullmatch(r"q[1-4]", word)) and word not in {"evs", "ev"}
     ]
+
+
+def query_markers(text: str) -> set[str]:
+    lowered = text.lower()
+    markers = set(re.findall(r"\bq[1-4]\b|\b20\d{2}\b|\b\d+(?:\.\d+)?%", lowered))
+    for phrase in [
+        "year over year",
+        "year-over-year",
+        "more than 50%",
+        "market share",
+        "sales",
+        "deliveries",
+        "revenue",
+        "funding",
+        "charging",
+        "investment",
+        "investing",
+    ]:
+        if phrase in lowered:
+            markers.add(phrase)
+    return markers
+
+
+def marker_overlap_score(markers: set[str], text: str) -> float:
+    lowered = text.lower()
+    score = 0.0
+    for marker in markers:
+        if marker in lowered:
+            score += 1.0
+    return score
 
 
 def add_node(graph: nx.MultiDiGraph, node: str, node_type: str, label: str | None = None, **attrs: object) -> None:
@@ -1036,17 +1116,17 @@ def load_graph_from_triples(triples_path: Path) -> nx.MultiDiGraph:
     with triples_path.open("r", encoding="utf-8", newline="") as file:
         reader = csv.DictReader(file)
         for row in reader:
-            source = clean_text(row.get("source", ""))
+            source = canonicalize_entity_name(row.get("source", ""))
             relation = normalize_relation(row.get("relation", "RELATED_TO"))
-            target = clean_text(row.get("target", ""))
+            target = canonicalize_entity_name(row.get("target", ""))
             if not source or not target:
                 continue
             try:
                 weight = float(row.get("weight", 1.0))
             except ValueError:
                 weight = 1.0
-            add_node(graph, source, infer_node_type(source), source, mentions=0)
-            add_node(graph, target, infer_node_type(target), target, mentions=0)
+            add_node(graph, source, canonical_node_type(source, infer_node_type(source)), source, mentions=0)
+            add_node(graph, target, canonical_node_type(target, infer_node_type(target)), target, mentions=0)
             add_fact(
                 graph,
                 source,
@@ -1087,7 +1167,7 @@ def graph_to_simple(graph: nx.MultiDiGraph, include_documents: bool = False) -> 
     return simple
 
 
-def draw_graph(graph: nx.MultiDiGraph, output_dir: Path, max_nodes: int = 55) -> None:
+def draw_graph(graph: nx.MultiDiGraph, output_dir: Path, max_nodes: int = 40) -> None:
     mpl_config = output_dir / ".matplotlib"
     mpl_config.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("MPLCONFIGDIR", str(mpl_config))
@@ -1097,53 +1177,289 @@ def draw_graph(graph: nx.MultiDiGraph, output_dir: Path, max_nodes: int = 55) ->
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    simple = graph_to_simple(graph, include_documents=False)
-    ranked = sorted(simple.nodes, key=lambda node: simple.degree(node, weight="weight"), reverse=True)
-    selected = set(ranked[:max_nodes])
-    for node in list(selected):
-        selected.update(neighbor for neighbor in simple.neighbors(node) if simple.nodes[neighbor].get("type") == "Metric")
-    selected = set(list(selected)[: max_nodes + 12])
-    subgraph = simple.subgraph(selected).copy()
-
-    color_by_type = {
-        "Company": "#2D6CDF",
-        "Person": "#7B3F98",
-        "Region": "#1B8A5A",
-        "Policy": "#D98E04",
-        "Concept": "#52525B",
-        "Metric": "#B42318",
+    semantic = nx.Graph()
+    weak_relations = {"CO_OCCURS_WITH", "RELATED_TO"}
+    metric_relation_terms = {
+        "MARKET_SHARE",
+        "SALES",
+        "DELIVER",
+        "REVENUE",
+        "FUND",
+        "INVEST",
+        "GROWTH",
+        "EMISSION",
+        "CHARGER",
+        "CHARGING",
+        "DENSITY",
+        "SHARE",
+        "PRICE",
+        "COST",
     }
-    colors = [color_by_type.get(str(subgraph.nodes[node].get("type")), "#6B7280") for node in subgraph.nodes]
-    sizes = [
-        280 + min(1600, 85 * math.sqrt(max(1, subgraph.degree(node, weight="weight"))))
-        for node in subgraph.nodes
+    visual_anchors = {
+        "Tesla",
+        "VinFast",
+        "Vingroup",
+        "Pham Nhat Vuong",
+        "BYD",
+        "CATL",
+        "Ford",
+        "Mercedes-Benz",
+        "BMW",
+        "Audi",
+        "Cadillac",
+        "ZEV regulations",
+        "Inflation Reduction Act",
+        "Bipartisan Infrastructure Law",
+        "Charging infrastructure",
+        "Public and workplace charging availability",
+        "Top 10 metropolitan areas by EV uptake",
+        "EPA",
+        "Polestar",
+        "Zeekr",
+        "Nikola",
+        "China",
+        "United States",
+        "Europe",
+    }
+
+    for node, data in graph.nodes(data=True):
+        if data.get("type") == "Document":
+            continue
+        semantic.add_node(
+            node,
+            type=str(data.get("type", "Entity")),
+            label=str(data.get("label", node)),
+            mentions=int(data.get("mentions", 0) or 0),
+        )
+
+    for source, target, _key, data in graph.edges(keys=True, data=True):
+        if source not in semantic or target not in semantic:
+            continue
+        relation = str(data.get("relation", "RELATED_TO"))
+        if relation == "MENTIONED_IN":
+            continue
+        source_type = str(semantic.nodes[source].get("type", "Entity"))
+        target_type = str(semantic.nodes[target].get("type", "Entity"))
+        if source_type == "Metric" and target_type == "Metric":
+            continue
+        relation_has_metric_signal = any(term in relation for term in metric_relation_terms)
+        if "Metric" in {source_type, target_type} and not relation_has_metric_signal:
+            continue
+        raw_weight = float(data.get("weight", 1.0))
+        visual_weight = raw_weight * (0.22 if relation in weak_relations else 1.0)
+        if relation == "CO_OCCURS_WITH" and visual_weight < 0.45:
+            continue
+        if semantic.has_edge(source, target):
+            semantic[source][target]["weight"] += visual_weight
+            relations = Counter(semantic[source][target]["relations"].split("|"))
+            relations[relation] += 1
+            semantic[source][target]["relations"] = "|".join(relations.keys())
+        else:
+            semantic.add_edge(
+                source,
+                target,
+                weight=visual_weight,
+                relations=relation,
+                sources=str(data.get("sources", "")),
+            )
+
+    semantic.remove_nodes_from([node for node, degree in semantic.degree() if degree == 0])
+    if semantic.number_of_nodes() == 0:
+        return
+
+    def node_score(node: str) -> float:
+        node_type = str(semantic.nodes[node].get("type", "Entity"))
+        score = float(semantic.degree(node, weight="weight"))
+        if node in visual_anchors:
+            score += 18.0
+        if node_type in {"Company", "Policy", "Organization"}:
+            score += 4.0
+        if node_type == "Concept":
+            score += 2.0
+        if node_type == "Metric":
+            score -= 5.0
+        if node in GENERIC_GRAPH_NODES and node not in {"China", "United States", "Europe"}:
+            score -= 3.5
+        return score
+
+    def label_for(node: str) -> str:
+        label = str(semantic.nodes[node].get("label", node)).replace("metric:", "")
+        label = re.sub(r"\s+", " ", label).strip()
+        if len(label) > 20:
+            label = label[:19].rstrip() + "..."
+        return "\n".join(textwrap.wrap(label, width=10, break_long_words=False)) or node[:10]
+
+    def edge_score(source: str, target: str, data: dict[str, object]) -> float:
+        relation = str(data.get("relations", "RELATED_TO"))
+        score = float(data.get("weight", 1.0))
+        score += 0.08 * node_score(source) + 0.08 * node_score(target)
+        if source in visual_anchors or target in visual_anchors:
+            score += 3.0
+        if source in {"China", "United States", "Europe"} or target in {"China", "United States", "Europe"}:
+            score -= 3.8
+        if relation in weak_relations:
+            score -= 1.0
+        if "Metric" in {semantic.nodes[source].get("type"), semantic.nodes[target].get("type")}:
+            score -= 0.6
+        return score
+
+    focus_order = [
+        "Tesla",
+        "BYD",
+        "Ford",
+        "VinFast",
+        "China",
+        "United States",
+        "CATL",
+        "Inflation Reduction Act",
     ]
+    focus = next((node for node in focus_order if node in semantic), max(semantic.nodes, key=node_score))
+    focus_component = nx.node_connected_component(semantic, focus)
+    selected_nodes: set[str] = {focus}
+    tree_edges: list[tuple[str, str, dict[str, object]]] = []
+    incident_counts: Counter[str] = Counter()
 
-    plt.figure(figsize=(24, 16))
-    pos = nx.spring_layout(subgraph, seed=19, k=0.95, iterations=120, weight="weight")
-    widths = [0.4 + min(4.5, 0.12 * data.get("weight", 1.0)) for _, _, data in subgraph.edges(data=True)]
-    nx.draw_networkx_edges(subgraph, pos, width=widths, alpha=0.28, edge_color="#5B6472")
-    nx.draw_networkx_nodes(subgraph, pos, node_size=sizes, node_color=colors, alpha=0.9, linewidths=0.9, edgecolors="white")
-    labels = {node: str(subgraph.nodes[node].get("label", node)).replace("metric:", "")[:28] for node in subgraph.nodes}
-    nx.draw_networkx_labels(subgraph, pos, labels=labels, font_size=8, font_family="DejaVu Sans")
+    def incident_limit(node: str) -> int:
+        if node in {"China", "United States", "Europe"}:
+            return 8
+        if node in visual_anchors:
+            return 12
+        return 10
 
+    while len(selected_nodes) < max_nodes:
+        expansion_edges = []
+        for source, target, data in semantic.edges(data=True):
+            if source not in focus_component or target not in focus_component:
+                continue
+            source_selected = source in selected_nodes
+            target_selected = target in selected_nodes
+            if source_selected == target_selected:
+                continue
+            if incident_counts[source] >= incident_limit(source) or incident_counts[target] >= incident_limit(target):
+                continue
+            relation = str(data.get("relations", ""))
+            if relation == "CO_OCCURS_WITH" and len(selected_nodes) < max_nodes // 2:
+                continue
+            expansion_edges.append((source, target, data))
+        if not expansion_edges:
+            break
+        source, target, data = max(expansion_edges, key=lambda item: edge_score(item[0], item[1], item[2]))
+        selected_nodes.update([source, target])
+        tree_edges.append((source, target, data))
+        incident_counts[source] += 1
+        incident_counts[target] += 1
+
+    selected_edge_keys = {tuple(sorted((source, target))) for source, target, _data in tree_edges}
+    selected_edges = list(tree_edges)
+    internal_edges = sorted(
+        (
+            (source, target, data)
+            for source, target, data in semantic.edges(data=True)
+            if source in selected_nodes and target in selected_nodes and tuple(sorted((source, target))) not in selected_edge_keys
+        ),
+        key=lambda item: edge_score(item[0], item[1], item[2]),
+        reverse=True,
+    )
+    selected_edges.extend(internal_edges[: max_nodes])
+
+    visual_graph = nx.Graph()
+    for node in selected_nodes:
+        visual_graph.add_node(node, **semantic.nodes[node])
+    for source, target, data in selected_edges:
+        if source in visual_graph and target in visual_graph:
+            visual_graph.add_edge(source, target, **data)
+    visual_graph.remove_nodes_from([node for node, degree in visual_graph.degree() if degree == 0])
+
+    if visual_graph.number_of_nodes() == 0:
+        return
+
+    pos = nx.spring_layout(
+        visual_graph,
+        seed=19,
+        k=1.35 / math.sqrt(max(visual_graph.number_of_nodes(), 1)),
+        iterations=450,
+        weight="weight",
+        scale=3.2,
+    )
+
+    fig, ax = plt.subplots(figsize=(18, 14), facecolor="white")
+    ax.set_facecolor("white")
+    edge_widths = [
+        1.0 + min(2.4, 0.24 * math.sqrt(float(data.get("weight", 1.0))))
+        for _, _, data in visual_graph.edges(data=True)
+    ]
+    nx.draw_networkx_edges(
+        visual_graph,
+        pos,
+        width=edge_widths,
+        edge_color="#AEB9BA",
+        alpha=0.62,
+        ax=ax,
+    )
+
+    node_sizes = [
+        720 + min(1250, 130 * math.sqrt(max(1.0, float(visual_graph.degree(node, weight="weight")))))
+        for node in visual_graph.nodes
+    ]
+    nx.draw_networkx_nodes(
+        visual_graph,
+        pos,
+        node_size=node_sizes,
+        node_color="#344555",
+        linewidths=1.2,
+        edgecolors="#F8FAFC",
+        alpha=0.98,
+        ax=ax,
+    )
+
+    nx.draw_networkx_labels(
+        visual_graph,
+        pos,
+        labels={node: label_for(node) for node in visual_graph.nodes},
+        font_size=8,
+        font_family="DejaVu Sans",
+        font_weight="bold",
+        font_color="white",
+        ax=ax,
+    )
+
+    labelled_edges = sorted(
+        visual_graph.edges(data=True),
+        key=lambda item: edge_score(item[0], item[1], item[2]),
+        reverse=True,
+    )[:26]
     edge_labels = {}
-    for source, target, data in sorted(subgraph.edges(data=True), key=lambda item: item[2].get("weight", 0), reverse=True)[:35]:
-        edge_labels[(source, target)] = str(data.get("relations", "")).split("|")[0]
-    nx.draw_networkx_edge_labels(subgraph, pos, edge_labels=edge_labels, font_size=6, alpha=0.72)
+    for source, target, data in labelled_edges:
+        relation = str(data.get("relations", "RELATED_TO")).split("|")[0]
+        if len(relation) > 34:
+            relation = relation[:33].rstrip() + "..."
+        edge_labels[(source, target)] = relation
 
-    legend_handles = [
-        plt.Line2D([0], [0], marker="o", color="w", label=node_type, markerfacecolor=color, markersize=10)
-        for node_type, color in color_by_type.items()
-    ]
-    plt.legend(handles=legend_handles, loc="lower left", frameon=False)
-    plt.title("Knowledge Graph - EV / Tech Company Corpus", fontsize=18, pad=18)
-    plt.axis("off")
-    plt.tight_layout()
-    plt.savefig(output_dir / "knowledge_graph.png", dpi=180)
-    plt.close()
+    nx.draw_networkx_edge_labels(
+        visual_graph,
+        pos,
+        edge_labels=edge_labels,
+        font_size=7,
+        font_family="DejaVu Sans",
+        font_color="#EF4E45",
+        rotate=True,
+        bbox={"boxstyle": "round,pad=0.1", "fc": "white", "ec": "none", "alpha": 0.72},
+        ax=ax,
+    )
 
-    nx.write_graphml(subgraph, output_dir / "knowledge_graph.graphml")
+    ax.set_title(
+        f"Tech Company & EV Industry Knowledge Graph (Top {visual_graph.number_of_nodes()} Nodes)",
+        fontsize=22,
+        fontweight="bold",
+        pad=28,
+        color="#111111",
+    )
+    ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(output_dir / "knowledge_graph.png", dpi=220, bbox_inches="tight")
+    plt.close(fig)
+
+    nx.write_graphml(visual_graph, output_dir / "knowledge_graph.graphml")
 
 
 class FlatRAG:
@@ -1221,17 +1537,46 @@ class FlatRAG:
         return evidence
 
 
+GENERIC_GRAPH_NODES = {
+    "EV",
+    "EVs",
+    "EV sales",
+    "EV adoption",
+    "electric vehicle",
+    "electric vehicles",
+    "Market share",
+    "market",
+    "growth",
+    "China",
+    "Chinese",
+    "United States",
+    "U.S.",
+    "US",
+    "USA",
+    "Europe",
+}
+
+
 class GraphRAG:
-    def __init__(self, graph: nx.MultiDiGraph, matcher: EntityMatcher) -> None:
+    def __init__(self, graph: nx.MultiDiGraph, matcher: EntityMatcher, documents: list[Document] | None = None) -> None:
         self.graph = graph
         self.matcher = matcher
         self.undirected = graph_to_simple(graph, include_documents=True)
+        self.documents = {doc.doc_id: doc for doc in documents or []}
+        self.chunk_index: list[dict[str, str]] = []
+        self.chunk_vectorizer: Any | None = None
+        self.chunk_matrix: Any | None = None
+        self._build_chunk_index(list(documents or []))
 
     def query(self, question: str, max_hops: int = 2, top_k: int = 10) -> tuple[list[str], list[Evidence], list[dict[str, object]]]:
         seeds = [entity for entity in self.matcher.find(question) if self.graph.has_node(entity)]
         if not seeds:
             seeds = self._fallback_seed_nodes(question)
         primary_seeds = self._primary_seeds(seeds)
+        if primary_seeds and all(self.graph.nodes[seed].get("type") == "Region" for seed in primary_seeds):
+            for seed in self._fallback_seed_nodes(question, limit=4):
+                if seed not in primary_seeds:
+                    primary_seeds.append(seed)
 
         frontier: set[str] = set()
         distances: dict[str, int] = {}
@@ -1246,9 +1591,11 @@ class GraphRAG:
             return seeds, [], []
 
         terms = set(content_terms(question))
+        markers = query_markers(question)
         rows: list[dict[str, object]] = []
         evidence: list[Evidence] = []
         seen_sentences: set[str] = set()
+        selected_source_ids: Counter[str] = Counter()
 
         for source, target, key, data in self.graph.edges(keys=True, data=True):
             if source not in frontier or target not in frontier:
@@ -1264,13 +1611,15 @@ class GraphRAG:
             sentence_blob = str(data.get("evidence", ""))
             row_text = f"{source} {relation} {target} {sentence_blob}"
             overlap = len(terms.intersection(content_terms(row_text)))
+            marker_bonus = 1.6 * marker_overlap_score(markers, row_text)
             if overlap == 0 and relation == "CO_OCCURS_WITH" and source not in primary_seeds and target not in primary_seeds:
                 continue
             relation_bonus = 1.8 if relation not in {"CO_OCCURS_WITH", "RELATED_TO"} else 0.35
             seed_bonus = 5.0 if source in primary_seeds or target in primary_seeds else 0.0
             path_bonus = max(0.0, 2.4 - 0.8 * min_distance)
             weight_bonus = min(2.0, 0.08 * float(data.get("weight", 1.0)))
-            score = seed_bonus + path_bonus + relation_bonus + weight_bonus + 1.45 * overlap
+            generic_penalty = 1.2 * sum(1 for node in (source, target) if self._is_generic_node(node) and node not in primary_seeds)
+            score = seed_bonus + path_bonus + relation_bonus + weight_bonus + 1.45 * overlap + marker_bonus - generic_penalty
             rows.append(
                 {
                     "source": source,
@@ -1281,6 +1630,9 @@ class GraphRAG:
                     "evidence": sentence_blob,
                 }
             )
+            for source_id in str(data.get("sources", "")).split("|"):
+                if source_id in self.documents:
+                    selected_source_ids[source_id] += max(1, int(round(score)))
             for sentence in sentence_blob.split(" || "):
                 sentence = sentence.strip()
                 if len(sentence) < 35 or sentence in seen_sentences:
@@ -1290,14 +1642,153 @@ class GraphRAG:
                     Evidence(
                         source_id=str(data.get("sources", "")).split("|")[0],
                         title=str(data.get("title", "")),
-                        text=sentence,
+                        text=f"Graph fact: {source} -[{relation}]-> {target}. Supporting extraction: {sentence}",
                         score=score + 0.6 * len(terms.intersection(content_terms(sentence))),
                     )
                 )
 
+        doc_relevance = self._doc_relevance_scores(question)
+        for row in rows:
+            row_doc_scores = [
+                doc_relevance.get(source_id, 0.0)
+                for source_id in str(row.get("sources", "")).split("|")
+            ]
+            if row_doc_scores:
+                row["score"] = float(row["score"]) + max(row_doc_scores)
+
         rows.sort(key=lambda row: float(row["score"]), reverse=True)
+        evidence.extend(self._graph_guided_chunk_evidence(question, rows[: max(30, top_k)], selected_source_ids, seen_sentences))
         evidence.sort(key=lambda item: item.score, reverse=True)
-        return seeds, evidence[:top_k], rows[:top_k]
+        return primary_seeds or seeds, evidence[:top_k], rows[:top_k]
+
+    def _build_chunk_index(self, documents: list[Document]) -> None:
+        if not documents:
+            return
+        for doc in documents:
+            sentences = split_sentences(doc.text)
+            if not sentences:
+                continue
+            for index in range(0, len(sentences), 3):
+                chunk = " ".join(sentences[index : index + 5])
+                if len(chunk) >= 100:
+                    self.chunk_index.append(
+                        {
+                            "doc_id": doc.doc_id,
+                            "title": doc.title,
+                            "text": chunk,
+                        }
+                    )
+        if not self.chunk_index:
+            return
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
+
+            self.chunk_vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2), max_features=4096)
+            self.chunk_matrix = self.chunk_vectorizer.fit_transform([chunk["text"] for chunk in self.chunk_index])
+        except Exception:
+            self.chunk_vectorizer = None
+            self.chunk_matrix = None
+
+    def _doc_relevance_scores(self, question: str) -> dict[str, float]:
+        if not self.chunk_index or self.chunk_vectorizer is None or self.chunk_matrix is None:
+            return {}
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        question_terms = set(content_terms(question))
+        markers = query_markers(question)
+        query_vector = self.chunk_vectorizer.transform([question])
+        similarities = cosine_similarity(query_vector, self.chunk_matrix).ravel()
+        scores: dict[str, float] = {}
+        for index, chunk in enumerate(self.chunk_index):
+            similarity = float(similarities[index])
+            if similarity <= 0:
+                continue
+            overlap = len(question_terms.intersection(content_terms(chunk["text"])))
+            marker_bonus = 1.4 * marker_overlap_score(markers, chunk["text"])
+            score = min(10.0, 18.0 * similarity + 0.7 * overlap + marker_bonus)
+            doc_id = chunk["doc_id"]
+            scores[doc_id] = max(scores.get(doc_id, 0.0), score)
+        return scores
+
+    def _graph_guided_chunk_evidence(
+        self,
+        question: str,
+        graph_rows: list[dict[str, object]],
+        source_votes: Counter[str],
+        seen_sentences: set[str],
+        max_items: int = 8,
+    ) -> list[Evidence]:
+        if not self.chunk_index:
+            return []
+
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        candidate_doc_ids: set[str] = set(source_votes)
+        for row in graph_rows:
+            for source_id in str(row.get("sources", "")).split("|"):
+                if source_id in self.documents:
+                    candidate_doc_ids.add(source_id)
+
+        graph_terms: set[str] = set()
+        for row in graph_rows:
+            graph_terms.update(content_terms(f"{row['source']} {row['relation']} {row['target']} {row.get('evidence', '')}"))
+        question_terms = set(content_terms(question))
+        markers = query_markers(question)
+
+        if self.chunk_vectorizer is not None and self.chunk_matrix is not None:
+            query_vector = self.chunk_vectorizer.transform([question])
+            similarities = cosine_similarity(query_vector, self.chunk_matrix).ravel()
+        else:
+            similarities = [0.0 for _ in self.chunk_index]
+
+        scored: list[tuple[float, Evidence]] = []
+        for index, chunk in enumerate(self.chunk_index):
+            doc_id = chunk["doc_id"]
+            if candidate_doc_ids and doc_id not in candidate_doc_ids:
+                continue
+            text = chunk["text"]
+            normalized = re.sub(r"\W+", " ", text.lower()).strip()
+            if normalized in seen_sentences:
+                continue
+            chunk_terms = set(content_terms(text))
+            question_overlap = len(question_terms.intersection(chunk_terms))
+            graph_overlap = len(graph_terms.intersection(chunk_terms))
+            marker_bonus = 2.2 * marker_overlap_score(markers, text)
+            if float(similarities[index]) <= 0.0 and question_overlap == 0 and graph_overlap < 2:
+                continue
+            graph_source_boost = 2.2 if doc_id in source_votes else 0.0
+            vote_boost = min(2.0, 0.05 * source_votes.get(doc_id, 0))
+            score = (
+                20.0 * float(similarities[index])
+                + 1.25 * question_overlap
+                + 0.25 * graph_overlap
+                + marker_bonus
+                + graph_source_boost
+                + vote_boost
+            )
+            scored.append(
+                (
+                    score,
+                    Evidence(
+                        source_id=doc_id,
+                        title=chunk["title"],
+                        text=f"Graph-guided supporting chunk: {text}",
+                        score=score,
+                    ),
+                )
+            )
+
+        scored.sort(key=lambda item: item[0], reverse=True)
+        selected: list[Evidence] = []
+        for _score, item in scored:
+            normalized = re.sub(r"\W+", " ", item.text.lower()).strip()
+            if normalized in seen_sentences:
+                continue
+            seen_sentences.add(normalized)
+            selected.append(item)
+            if len(selected) >= max_items:
+                break
+        return selected
 
     def _primary_seeds(self, seeds: list[str]) -> list[str]:
         if not seeds:
@@ -1313,7 +1804,7 @@ class GraphRAG:
         non_region = [seed for seed in seeds if self.graph.nodes[seed].get("type") != "Region"]
         return non_region or seeds
 
-    def _fallback_seed_nodes(self, question: str) -> list[str]:
+    def _fallback_seed_nodes(self, question: str, limit: int = 2) -> list[str]:
         terms = set(content_terms(question))
         scored: list[tuple[float, str]] = []
         for node, data in self.graph.nodes(data=True):
@@ -1322,12 +1813,83 @@ class GraphRAG:
             label = str(data.get("label", node))
             overlap = len(terms.intersection(content_terms(label)))
             if overlap:
-                scored.append((overlap + self.graph.degree(node) * 0.01, node))
+                generic_penalty = 0.75 if self._is_generic_node(node) else 0.0
+                degree_penalty = min(1.25, self.graph.degree(node) * 0.006)
+                scored.append((overlap - generic_penalty - degree_penalty, node))
         scored.sort(reverse=True)
-        return [node for _, node in scored[:2]]
+        return [node for _, node in scored[:limit]]
+
+    def _is_generic_node(self, node: str) -> bool:
+        label = str(self.graph.nodes[node].get("label", node)) if self.graph.has_node(node) else node
+        return label in GENERIC_GRAPH_NODES or label.lower() in {item.lower() for item in GENERIC_GRAPH_NODES}
+
+    def _supporting_text_evidence(
+        self,
+        question: str,
+        graph_rows: list[dict[str, object]],
+        source_votes: Counter[str],
+        seen_sentences: set[str],
+        max_items: int = 8,
+    ) -> list[Evidence]:
+        if not self.documents:
+            return []
+
+        terms = set(content_terms(question))
+        graph_terms: set[str] = set()
+        for row in graph_rows:
+            graph_terms.update(content_terms(f"{row['source']} {row['relation']} {row['target']} {row.get('evidence', '')}"))
+
+        candidate_doc_ids: set[str] = set(source_votes)
+        for row in graph_rows:
+            for source_id in str(row.get("sources", "")).split("|"):
+                if source_id in self.documents:
+                    candidate_doc_ids.add(source_id)
+
+        scored_sentences: list[tuple[float, Evidence]] = []
+        for doc_id in candidate_doc_ids:
+            doc = self.documents.get(doc_id)
+            if doc is None:
+                continue
+            doc_vote = source_votes.get(doc_id, 1)
+            for sentence in split_sentences(doc.text):
+                sentence = sentence.strip()
+                if len(sentence) < 45:
+                    continue
+                normalized = re.sub(r"\W+", " ", sentence.lower()).strip()
+                if normalized in seen_sentences:
+                    continue
+                sentence_terms = set(content_terms(sentence))
+                question_overlap = len(terms.intersection(sentence_terms))
+                graph_overlap = len(graph_terms.intersection(sentence_terms))
+                if question_overlap == 0 and graph_overlap < 2:
+                    continue
+                score = 2.0 + 1.7 * question_overlap + 0.45 * graph_overlap + min(2.0, 0.08 * doc_vote)
+                scored_sentences.append(
+                    (
+                        score,
+                        Evidence(
+                            source_id=doc.doc_id,
+                            title=doc.title,
+                            text=f"Supporting text: {sentence}",
+                            score=score,
+                        ),
+                    )
+                )
+
+        scored_sentences.sort(key=lambda item: item[0], reverse=True)
+        selected: list[Evidence] = []
+        for _score, item in scored_sentences:
+            normalized = re.sub(r"\W+", " ", item.text.lower()).strip()
+            if normalized in seen_sentences:
+                continue
+            seen_sentences.add(normalized)
+            selected.append(item)
+            if len(selected) >= max_items:
+                break
+        return selected
 
 
-def synthesize_answer(question: str, evidence: list[Evidence], max_sentences: int = 4) -> str:
+def synthesize_answer(question: str, evidence: list[Evidence], max_sentences: int = 5) -> str:
     if not evidence:
         return "No strong evidence found in the indexed corpus."
 
@@ -1349,6 +1911,12 @@ def synthesize_answer(question: str, evidence: list[Evidence], max_sentences: in
         if normalized in seen:
             continue
         seen.add(normalized)
+        sentence = re.sub(
+            r"^(Graph fact:|Supporting text:|Supporting extraction:|Graph-guided supporting chunk:)\s*",
+            "",
+            sentence,
+        ).strip()
+        sentence = sentence.replace(" Supporting extraction:", "").replace(" Supporting text:", "")
         selected.append((item, sentence))
         if len(selected) >= max_sentences:
             break
@@ -1487,7 +2055,7 @@ def run_benchmark(
     log("Preparing Flat RAG vector store")
     flat = FlatRAG(documents)
     log(f"Flat RAG backend ready: {flat.backend}, chunks={len(flat.chunks)}")
-    graph_rag = GraphRAG(graph, matcher)
+    graph_rag = GraphRAG(graph, matcher, documents)
 
     rows = []
     for question_index, question in enumerate(BENCHMARK_QUESTIONS, start=1):
@@ -1546,6 +2114,7 @@ def main() -> None:
     parser.add_argument("--mode", choices=["llm", "offline"], default="llm", help="Default uses LLM extraction and LLM judge.")
     parser.add_argument("--refresh-cache", action="store_true", help="Ignore cached LLM triples and re-extract from the corpus.")
     parser.add_argument("--no-plot", action="store_true", help="Skip PNG/GraphML visualization.")
+    parser.add_argument("--redraw-graph", action="store_true", help="Only redraw outputs/knowledge_graph.png and GraphML from outputs/triples.csv, then exit.")
     parser.add_argument("--ask", type=str, default="", help="Ask one GraphRAG query from existing outputs/triples.csv and exit.")
     parser.add_argument("--ask-after-build", action="store_true", help="Run the full pipeline first, then ask the query.")
     parser.add_argument("--ask-use-llm", action="store_true", help="Use the configured LLM to write the ad-hoc answer.")
@@ -1554,11 +2123,20 @@ def main() -> None:
     started = time.perf_counter()
     args.output.mkdir(parents=True, exist_ok=True)
 
+    if args.redraw_graph:
+        log("Redraw-graph mode: loading existing triples.csv")
+        graph = load_graph_from_triples(args.output / "triples.csv")
+        log("Drawing semantic-core knowledge graph image")
+        draw_graph(graph, args.output)
+        log(f"Graph visualization written to: {args.output / 'knowledge_graph.png'}")
+        return
+
     if args.ask and not args.ask_after_build:
         log("Ask-only mode: loading existing graph from outputs/triples.csv")
         matcher = EntityMatcher(ENTITY_DEFINITIONS)
         graph = load_graph_from_triples(args.output / "triples.csv")
-        seeds, evidence, edges = GraphRAG(graph, matcher).query(args.ask)
+        documents = load_documents(args.dataset)
+        seeds, evidence, edges = GraphRAG(graph, matcher, documents).query(args.ask)
         llm = None
         if args.ask_use_llm:
             try:
@@ -1649,7 +2227,7 @@ def main() -> None:
     log("Pipeline artifacts written. Run generate_report.py to create REPORT_DAY_19.md")
 
     if args.ask and args.ask_after_build:
-        seeds, evidence, edges = GraphRAG(graph, matcher).query(args.ask)
+        seeds, evidence, edges = GraphRAG(graph, matcher, documents).query(args.ask)
         answer = llm_answer(args.ask, evidence, llm, "GraphRAG") if llm is not None else synthesize_answer(args.ask, evidence)
         print("\nAd-hoc GraphRAG query")
         print(f"Question: {args.ask}")
