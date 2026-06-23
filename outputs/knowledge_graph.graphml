@@ -1,0 +1,706 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d4" for="edge" attr.name="relations" attr.type="string"/>
+<key id="d3" for="edge" attr.name="weight" attr.type="double"/>
+<key id="d2" for="node" attr.name="mentions" attr.type="long"/>
+<key id="d1" for="node" attr.name="label" attr.type="string"/>
+<key id="d0" for="node" attr.name="type" attr.type="string"/>
+<graph edgedefault="undirected"><node id="Lucid">
+  <data key="d0">Company</data>
+  <data key="d1">Lucid</data>
+  <data key="d2">7</data>
+</node>
+<node id="metric:Rivian sales growth/change: 50%">
+  <data key="d0">Metric</data>
+  <data key="d1">Rivian sales growth/change: 50%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Tesla deliveries: 2024">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla deliveries: 2024</data>
+  <data key="d2">1</data>
+</node>
+<node id="metric:REE Automotive deliveries: 2021">
+  <data key="d0">Metric</data>
+  <data key="d1">REE Automotive deliveries: 2021</data>
+  <data key="d2">1</data>
+</node>
+<node id="metric:Tesla market share: 51.3%, 61.7%, 2024">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla market share: 51.3%, 61.7%, 2024</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Chevrolet sales growth/change: 62,045, 150, 40,771">
+  <data key="d0">Metric</data>
+  <data key="d1">Chevrolet sales growth/change: 62,045, 150, 40,771</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Volvo Cars funding: $200 million, $250 million, $1.3 billion">
+  <data key="d0">Metric</data>
+  <data key="d1">Volvo Cars funding: $200 million, $250 million, $1.3 billion</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Hyundai sales growth/change: 40%, 60%, 115%">
+  <data key="d0">Metric</data>
+  <data key="d1">Hyundai sales growth/change: 40%, 60%, 115%</data>
+  <data key="d2">0</data>
+</node>
+<node id="Tesla">
+  <data key="d0">Company</data>
+  <data key="d1">Tesla</data>
+  <data key="d2">232</data>
+</node>
+<node id="Great Wall Motors">
+  <data key="d0">Company</data>
+  <data key="d1">Great Wall Motors</data>
+  <data key="d2">2</data>
+</node>
+<node id="Middle East">
+  <data key="d0">Region</data>
+  <data key="d1">Middle East</data>
+  <data key="d2">9</data>
+</node>
+<node id="metric:VinFast deliveries: 163%, 163">
+  <data key="d0">Metric</data>
+  <data key="d1">VinFast deliveries: 163%, 163</data>
+  <data key="d2">0</data>
+</node>
+<node id="Volkswagen">
+  <data key="d0">Company</data>
+  <data key="d1">Volkswagen</data>
+  <data key="d2">36</data>
+</node>
+<node id="Polestar">
+  <data key="d0">Company</data>
+  <data key="d1">Polestar</data>
+  <data key="d2">164</data>
+</node>
+<node id="metric:Vingroup funding: US$1.5 billion, 2026">
+  <data key="d0">Metric</data>
+  <data key="d1">Vingroup funding: US$1.5 billion, 2026</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Tesla sales growth/change: 40%, 30%, 2023">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla sales growth/change: 40%, 30%, 2023</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Ford sales growth/change: 72%, 2024">
+  <data key="d0">Metric</data>
+  <data key="d1">Ford sales growth/change: 72%, 2024</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Tesla market share: 2023, 2023, 603,664">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla market share: 2023, 2023, 603,664</data>
+  <data key="d2">1</data>
+</node>
+<node id="metric:BYD market share: 100%, 100, 2024">
+  <data key="d0">Metric</data>
+  <data key="d1">BYD market share: 100%, 100, 2024</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Kia sales growth/change: 50%">
+  <data key="d0">Metric</data>
+  <data key="d1">Kia sales growth/change: 50%</data>
+  <data key="d2">0</data>
+</node>
+<node id="North America">
+  <data key="d0">Region</data>
+  <data key="d1">North America</data>
+  <data key="d2">15</data>
+</node>
+<node id="metric:VinFast funding: US$1.5 billion, 2026">
+  <data key="d0">Metric</data>
+  <data key="d1">VinFast funding: US$1.5 billion, 2026</data>
+  <data key="d2">0</data>
+</node>
+<node id="Stephanie Valdez Streaty">
+  <data key="d0">Person</data>
+  <data key="d1">Stephanie Valdez Streaty</data>
+  <data key="d2">1</data>
+</node>
+<node id="metric:BYD market share: 55%, 2015">
+  <data key="d0">Metric</data>
+  <data key="d1">BYD market share: 55%, 2015</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:ZEV states combined new EV share: 5%">
+  <data key="d0">Metric</data>
+  <data key="d1">ZEV states combined new EV share: 5%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:VinFast deliveries: 21%, 11,000, 51,000">
+  <data key="d0">Metric</data>
+  <data key="d1">VinFast deliveries: 21%, 11,000, 51,000</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Tesla sales growth/change: 70%">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla sales growth/change: 70%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Ford market share: 0.36%">
+  <data key="d0">Metric</data>
+  <data key="d1">Ford market share: 0.36%</data>
+  <data key="d2">0</data>
+</node>
+<node id="Zeekr">
+  <data key="d0">Company</data>
+  <data key="d1">Zeekr</data>
+  <data key="d2">14</data>
+</node>
+<node id="REE Automotive">
+  <data key="d0">Company</data>
+  <data key="d1">REE Automotive</data>
+  <data key="d2">52</data>
+</node>
+<node id="metric:Mercedes-Benz sales growth/change: 50%">
+  <data key="d0">Metric</data>
+  <data key="d1">Mercedes-Benz sales growth/change: 50%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Mercedes-Benz deliveries: 12.6%, 15.1%, 12.3%">
+  <data key="d0">Metric</data>
+  <data key="d1">Mercedes-Benz deliveries: 12.6%, 15.1%, 12.3%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:VinFast funding: US$3.3 billion">
+  <data key="d0">Metric</data>
+  <data key="d1">VinFast funding: US$3.3 billion</data>
+  <data key="d2">0</data>
+</node>
+<node id="Xingji Meizu">
+  <data key="d0">Company</data>
+  <data key="d1">Xingji Meizu</data>
+  <data key="d2">7</data>
+</node>
+<node id="BMW">
+  <data key="d0">Company</data>
+  <data key="d1">BMW</data>
+  <data key="d2">21</data>
+</node>
+<node id="metric:Nikola revenue: US$34 billion">
+  <data key="d0">Metric</data>
+  <data key="d1">Nikola revenue: US$34 billion</data>
+  <data key="d2">0</data>
+</node>
+<node id="Thailand">
+  <data key="d0">Region</data>
+  <data key="d1">Thailand</data>
+  <data key="d2">11</data>
+</node>
+<node id="metric:Tesla sales growth/change: 40%, 60%, 115%">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla sales growth/change: 40%, 60%, 115%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:VinFast revenue: $3.5 billion, 115%, 49.3%">
+  <data key="d0">Metric</data>
+  <data key="d1">VinFast revenue: $3.5 billion, 115%, 49.3%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Zeekr revenue: 71.0%, 154.9%, 2024">
+  <data key="d0">Metric</data>
+  <data key="d1">Zeekr revenue: 71.0%, 154.9%, 2024</data>
+  <data key="d2">0</data>
+</node>
+<node id="BYD">
+  <data key="d0">Company</data>
+  <data key="d1">BYD</data>
+  <data key="d2">130</data>
+</node>
+<node id="metric:Zeekr deliveries: 2024, 001, 2024">
+  <data key="d0">Metric</data>
+  <data key="d1">Zeekr deliveries: 2024, 001, 2024</data>
+  <data key="d2">0</data>
+</node>
+<node id="Lexus">
+  <data key="d0">Company</data>
+  <data key="d1">Lexus</data>
+  <data key="d2">1</data>
+</node>
+<node id="Charging infrastructure">
+  <data key="d0">Concept</data>
+  <data key="d1">Charging infrastructure</data>
+  <data key="d2">167</data>
+</node>
+<node id="metric:Vingroup deliveries: $3.5 billion, 115%, 49.3%">
+  <data key="d0">Metric</data>
+  <data key="d1">Vingroup deliveries: $3.5 billion, 115%, 49.3%</data>
+  <data key="d2">0</data>
+</node>
+<node id="China">
+  <data key="d0">Region</data>
+  <data key="d1">China</data>
+  <data key="d2">1059</data>
+</node>
+<node id="metric:Cox Automotive sales decline/change: 81.2%, 20.4%, 2022">
+  <data key="d0">Metric</data>
+  <data key="d1">Cox Automotive sales decline/change: 81.2%, 20.4%, 2022</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:BMW sales growth/change: 15%, 2023">
+  <data key="d0">Metric</data>
+  <data key="d1">BMW sales growth/change: 15%, 2023</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:General Motors market share: 8.2%, 6.1%">
+  <data key="d0">Metric</data>
+  <data key="d1">General Motors market share: 8.2%, 6.1%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Tesla market share: 50.9%, 2023">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla market share: 50.9%, 2023</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Tesla sales growth/change: 86.1%">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla sales growth/change: 86.1%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Cox Automotive sales growth/change: 81.2%, 20.4%, 2022">
+  <data key="d0">Metric</data>
+  <data key="d1">Cox Automotive sales growth/change: 81.2%, 20.4%, 2022</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Mercedes-Benz deliveries: 2023">
+  <data key="d0">Metric</data>
+  <data key="d1">Mercedes-Benz deliveries: 2023</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Geely deliveries: 71.0%, 154.9%, 2024">
+  <data key="d0">Metric</data>
+  <data key="d1">Geely deliveries: 71.0%, 154.9%, 2024</data>
+  <data key="d2">0</data>
+</node>
+<node id="Hyundai">
+  <data key="d0">Company</data>
+  <data key="d1">Hyundai</data>
+  <data key="d2">27</data>
+</node>
+<node id="Chevrolet">
+  <data key="d0">Company</data>
+  <data key="d1">Chevrolet</data>
+  <data key="d2">7</data>
+</node>
+<node id="metric:BYD sales growth/change: 70%">
+  <data key="d0">Metric</data>
+  <data key="d1">BYD sales growth/change: 70%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:REE Automotive funding: $17 million, 2021">
+  <data key="d0">Metric</data>
+  <data key="d1">REE Automotive funding: $17 million, 2021</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:VinFast deliveries: 2024">
+  <data key="d0">Metric</data>
+  <data key="d1">VinFast deliveries: 2024</data>
+  <data key="d2">0</data>
+</node>
+<node id="Nikola">
+  <data key="d0">Company</data>
+  <data key="d1">Nikola</data>
+  <data key="d2">11</data>
+</node>
+<node id="metric:Tesla market share: 6.7%">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla market share: 6.7%</data>
+  <data key="d2">0</data>
+</node>
+<node id="Vietnam">
+  <data key="d0">Region</data>
+  <data key="d1">Vietnam</data>
+  <data key="d2">14</data>
+</node>
+<node id="Ford">
+  <data key="d0">Company</data>
+  <data key="d1">Ford</data>
+  <data key="d2">60</data>
+</node>
+<node id="metric:Tesla sales growth/change: 13.3%">
+  <data key="d0">Metric</data>
+  <data key="d1">Tesla sales growth/change: 13.3%</data>
+  <data key="d2">0</data>
+</node>
+<node id="metric:Cox Automotive revenue: $22 billion">
+  <data key="d0">Metric</data>
+  <data key="d1">Cox Automotive revenue: $22 billion</data>
+  <data key="d2">2</data>
+</node>
+<node id="Dealer sentiment">
+  <data key="d0">Concept</data>
+  <data key="d1">Dealer sentiment</data>
+  <data key="d2">14</data>
+</node>
+<node id="VinFast">
+  <data key="d0">Company</data>
+  <data key="d1">VinFast</data>
+  <data key="d2">41</data>
+</node>
+<edge source="Lucid" target="Ford">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Lucid" target="Nikola">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Lucid" target="Polestar">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Lucid" target="VinFast">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Lucid" target="Tesla">
+  <data key="d3">2.0999999999999996</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Lucid" target="China">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="metric:Tesla deliveries: 2024" target="Tesla">
+  <data key="d3">4.0</data>
+  <data key="d4">DELIVERED</data>
+</edge>
+<edge source="metric:REE Automotive deliveries: 2021" target="REE Automotive">
+  <data key="d3">4.0</data>
+  <data key="d4">DELIVERED</data>
+</edge>
+<edge source="metric:Tesla market share: 51.3%, 61.7%, 2024" target="Tesla">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_MARKET_SHARE</data>
+</edge>
+<edge source="metric:Chevrolet sales growth/change: 62,045, 150, 40,771" target="Chevrolet">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="metric:Hyundai sales growth/change: 40%, 60%, 115%" target="Hyundai">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="Tesla" target="metric:Tesla sales growth/change: 13.3%">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="Tesla" target="metric:Tesla sales growth/change: 86.1%">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="Tesla" target="metric:Tesla sales growth/change: 40%, 30%, 2023">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="Tesla" target="Volkswagen">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Tesla" target="metric:Tesla sales growth/change: 40%, 60%, 115%">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="Tesla" target="metric:Tesla market share: 2023, 2023, 603,664">
+  <data key="d3">4.0</data>
+  <data key="d4">HAS_MARKET_SHARE</data>
+</edge>
+<edge source="Tesla" target="metric:Tesla market share: 6.7%">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_MARKET_SHARE</data>
+</edge>
+<edge source="Tesla" target="metric:Tesla sales growth/change: 70%">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="Tesla" target="metric:Tesla market share: 50.9%, 2023">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_MARKET_SHARE</data>
+</edge>
+<edge source="Tesla" target="VinFast">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Tesla" target="BMW">
+  <data key="d3">4.9</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Tesla" target="Ford">
+  <data key="d3">8.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Tesla" target="Hyundai">
+  <data key="d3">2.8</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Tesla" target="BYD">
+  <data key="d3">31.399999999999988</data>
+  <data key="d4">CO_OCCURS_WITH|SURPASSED</data>
+</edge>
+<edge source="Tesla" target="Stephanie Valdez Streaty">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Tesla" target="China">
+  <data key="d3">42.00000000000002</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Tesla" target="Charging infrastructure">
+  <data key="d3">3.5</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Great Wall Motors" target="Ford">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Great Wall Motors" target="BYD">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Great Wall Motors" target="Thailand">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Great Wall Motors" target="China">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Middle East" target="BYD">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Middle East" target="China">
+  <data key="d3">2.0999999999999996</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Middle East" target="VinFast">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="metric:VinFast deliveries: 163%, 163" target="VinFast">
+  <data key="d3">2.0</data>
+  <data key="d4">DELIVERED</data>
+</edge>
+<edge source="Volkswagen" target="BMW">
+  <data key="d3">2.8</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Volkswagen" target="Ford">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Volkswagen" target="Hyundai">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Volkswagen" target="BYD">
+  <data key="d3">2.0999999999999996</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Volkswagen" target="China">
+  <data key="d3">7.000000000000001</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Polestar" target="Xingji Meizu">
+  <data key="d3">4.9</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Polestar" target="VinFast">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Polestar" target="Nikola">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Polestar" target="China">
+  <data key="d3">5.6000000000000005</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Polestar" target="North America">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="metric:Ford sales growth/change: 72%, 2024" target="Ford">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="metric:BYD market share: 100%, 100, 2024" target="BYD">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_MARKET_SHARE</data>
+</edge>
+<edge source="North America" target="VinFast">
+  <data key="d3">2.0999999999999996</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="North America" target="Vietnam">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="North America" target="REE Automotive">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="metric:VinFast funding: US$1.5 billion, 2026" target="VinFast">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_FUNDING</data>
+</edge>
+<edge source="metric:BYD market share: 55%, 2015" target="BYD">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_MARKET_SHARE</data>
+</edge>
+<edge source="metric:VinFast deliveries: 21%, 11,000, 51,000" target="VinFast">
+  <data key="d3">2.0</data>
+  <data key="d4">DELIVERED</data>
+</edge>
+<edge source="metric:Ford market share: 0.36%" target="Ford">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_MARKET_SHARE</data>
+</edge>
+<edge source="Zeekr" target="metric:Zeekr deliveries: 2024, 001, 2024">
+  <data key="d3">2.0</data>
+  <data key="d4">DELIVERED</data>
+</edge>
+<edge source="Zeekr" target="metric:Zeekr revenue: 71.0%, 154.9%, 2024">
+  <data key="d3">2.0</data>
+  <data key="d4">REPORTED_REVENUE</data>
+</edge>
+<edge source="Zeekr" target="China">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="REE Automotive" target="metric:REE Automotive funding: $17 million, 2021">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_FUNDING</data>
+</edge>
+<edge source="REE Automotive" target="Charging infrastructure">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="metric:VinFast funding: US$3.3 billion" target="VinFast">
+  <data key="d3">2.0</data>
+  <data key="d4">HAS_FUNDING</data>
+</edge>
+<edge source="Xingji Meizu" target="China">
+  <data key="d3">2.0999999999999996</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BMW" target="Ford">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BMW" target="Hyundai">
+  <data key="d3">2.8</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BMW" target="Lexus">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BMW" target="VinFast">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BMW" target="China">
+  <data key="d3">6.300000000000001</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BMW" target="metric:BMW sales growth/change: 15%, 2023">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="BMW" target="BYD">
+  <data key="d3">2.8</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="metric:Nikola revenue: US$34 billion" target="Nikola">
+  <data key="d3">2.0</data>
+  <data key="d4">REPORTED_REVENUE</data>
+</edge>
+<edge source="Thailand" target="Ford">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Thailand" target="BYD">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Thailand" target="China">
+  <data key="d3">6.300000000000001</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="metric:VinFast revenue: $3.5 billion, 115%, 49.3%" target="VinFast">
+  <data key="d3">2.0</data>
+  <data key="d4">REPORTED_REVENUE</data>
+</edge>
+<edge source="BYD" target="China">
+  <data key="d3">35.699999999999996</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BYD" target="Ford">
+  <data key="d3">2.0999999999999996</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BYD" target="Charging infrastructure">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="BYD" target="metric:BYD sales growth/change: 70%">
+  <data key="d3">2.0</data>
+  <data key="d4">SALES_INCREASED</data>
+</edge>
+<edge source="Lexus" target="Ford">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Lexus" target="Hyundai">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Lexus" target="VinFast">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Charging infrastructure" target="China">
+  <data key="d3">11.899999999999997</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="China" target="Ford">
+  <data key="d3">9.799999999999999</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="China" target="Vietnam">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Hyundai" target="Ford">
+  <data key="d3">2.8</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Hyundai" target="VinFast">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Chevrolet" target="Ford">
+  <data key="d3">1.4</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="metric:VinFast deliveries: 2024" target="VinFast">
+  <data key="d3">2.0</data>
+  <data key="d4">DELIVERED</data>
+</edge>
+<edge source="Nikola" target="VinFast">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Vietnam" target="VinFast">
+  <data key="d3">6.300000000000001</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+<edge source="Ford" target="VinFast">
+  <data key="d3">0.7</data>
+  <data key="d4">CO_OCCURS_WITH</data>
+</edge>
+</graph></graphml>
