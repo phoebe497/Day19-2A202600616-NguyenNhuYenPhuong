@@ -15,16 +15,17 @@ from pathlib import Path
 from typing import Any
 
 import networkx as nx
-import pandas as pd
-from dotenv import load_dotenv
-from openai import OpenAI
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 ROOT = Path(__file__).resolve().parent
 DATASET_DIR = ROOT / "dataset"
 OUTPUT_DIR = ROOT / "outputs"
+
+STOP_WORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "have", "how", "in", "into",
+    "is", "it", "its", "of", "on", "or", "that", "the", "their", "this", "to", "was", "were", "what",
+    "when", "where", "which", "who", "why", "with", "year", "years", "according", "about", "across",
+}
 
 
 def log(message: str) -> None:
@@ -450,6 +451,8 @@ def read_float_env(name: str, default: float) -> float:
 
 
 def load_llm_config(required: bool = True) -> LLMConfig | None:
+    from dotenv import load_dotenv
+
     load_dotenv(ROOT / ".env")
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -473,6 +476,8 @@ def load_llm_config(required: bool = True) -> LLMConfig | None:
 
 class LLMClient:
     def __init__(self, config: LLMConfig) -> None:
+        from openai import OpenAI
+
         self.config = config
         kwargs: dict[str, Any] = {"api_key": config.api_key}
         if config.base_url:
@@ -677,8 +682,15 @@ def extract_llm_triples(
     cache = {} if force_refresh else load_triple_cache(cache_path)
     extracted: list[tuple[Document, Triple]] = []
     total_chunks = sum(len(chunk_document(doc, llm.config.chunk_chars, llm.config.max_chunks_per_doc)) for doc in documents)
+    cached_chunks = 0
+    uncached_chunks = 0
+    benchmark_llm_calls = len(BENCHMARK_QUESTIONS) * 3
     processed_chunks = 0
-    log(f"LLM indexing: {len(documents)} documents, {total_chunks} chunks, cache entries={len(cache)}")
+    log(
+        "LLM indexing plan: "
+        f"documents={len(documents)}, chunks={total_chunks}, cache entries={len(cache)}, "
+        f"benchmark_llm_calls={benchmark_llm_calls}, total_est_llm_calls={benchmark_llm_calls}"
+    )
 
     for doc in documents:
         for chunk_index, chunk in enumerate(chunk_document(doc, llm.config.chunk_chars, llm.config.max_chunks_per_doc), start=1):
@@ -688,11 +700,13 @@ def extract_llm_triples(
                 raw_triples = cache[key]
                 triples = [coerce_triple(item, doc) for item in raw_triples if isinstance(item, dict)]
                 extracted.extend((doc, triple) for triple in triples if triple is not None)
+                cached_chunks += 1
                 log(
                     f"LLM indexing [{processed_chunks}/{total_chunks}] {doc.doc_id} chunk {chunk_index}: "
                     f"cache hit, triples={len(triples)}"
                 )
                 continue
+            uncached_chunks += 1
             log(f"LLM indexing [{processed_chunks}/{total_chunks}] {doc.doc_id} chunk {chunk_index}: calling LLM")
             triples = extract_triples_from_chunk(llm, doc, chunk, chunk_index)
             raw_triples = [
@@ -714,8 +728,54 @@ def extract_llm_triples(
                 f"triples={len(triples)}, llm_calls={llm.calls}, est_tokens={llm.estimated_tokens}"
             )
 
-    log(f"LLM indexing done: extracted triples={len(extracted)}")
+    log(
+        "LLM indexing summary: "
+        f"cached_chunks={cached_chunks}, uncached_chunks={uncached_chunks}, extracted_triples={len(extracted)}, "
+        f"llm_calls_used={llm.calls}, est_tokens={llm.estimated_tokens}"
+    )
     return extracted
+
+
+def estimate_llm_work(
+    documents: list[Document],
+    config: LLMConfig,
+    output_dir: Path,
+    force_refresh: bool,
+    benchmark_questions: int,
+) -> dict[str, float]:
+    cache_path = output_dir / "llm_triples_cache.jsonl"
+    cache = {} if force_refresh else load_triple_cache(cache_path)
+    total_chunks = 0
+    uncached_chunks = 0
+    for doc in documents:
+        chunks = chunk_document(doc, config.chunk_chars, config.max_chunks_per_doc)
+        total_chunks += len(chunks)
+        for chunk_index, chunk in enumerate(chunks, start=1):
+            if cache_key(doc, chunk_index, chunk) not in cache:
+                uncached_chunks += 1
+
+    benchmark_calls = benchmark_questions * 3
+    total_llm_calls = uncached_chunks + benchmark_calls
+    seconds_per_call = read_float_env("GRAPHRAG_EST_SECONDS_PER_LLM_CALL", 10.0)
+    estimated_seconds = total_llm_calls * seconds_per_call
+    return {
+        "total_chunks": float(total_chunks),
+        "cached_chunks": float(total_chunks - uncached_chunks),
+        "uncached_chunks": float(uncached_chunks),
+        "benchmark_calls": float(benchmark_calls),
+        "total_llm_calls": float(total_llm_calls),
+        "seconds_per_call": float(seconds_per_call),
+        "estimated_seconds": float(estimated_seconds),
+    }
+
+
+def format_duration(seconds: float) -> str:
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    minutes = seconds / 60
+    if minutes < 60:
+        return f"{minutes:.1f} minutes"
+    return f"{minutes / 60:.1f} hours"
 
 
 def build_graph_from_llm_triples(triples: list[tuple[Document, Triple]]) -> nx.MultiDiGraph:
@@ -758,7 +818,7 @@ def content_terms(text: str) -> list[str]:
     return [
         word
         for word in words
-        if word not in ENGLISH_STOP_WORDS and len(word) > 2 and word not in {"evs", "ev"}
+        if word not in STOP_WORDS and len(word) > 2 and word not in {"evs", "ev"}
     ]
 
 
@@ -958,6 +1018,48 @@ def write_triples(graph: nx.MultiDiGraph, output_dir: Path) -> None:
         writer.writerows(rows)
 
 
+def infer_node_type(node: str) -> str:
+    if node.startswith("doc:"):
+        return "Document"
+    if node.startswith("metric:"):
+        return "Metric"
+    if node in ENTITY_DEFINITIONS:
+        return str(ENTITY_DEFINITIONS[node].get("type", "Entity"))
+    return "Entity"
+
+
+def load_graph_from_triples(triples_path: Path) -> nx.MultiDiGraph:
+    if not triples_path.exists():
+        raise FileNotFoundError(f"Missing triples file: {triples_path}. Run graphrag_lab.py once to build artifacts.")
+
+    graph = nx.MultiDiGraph()
+    with triples_path.open("r", encoding="utf-8", newline="") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            source = clean_text(row.get("source", ""))
+            relation = normalize_relation(row.get("relation", "RELATED_TO"))
+            target = clean_text(row.get("target", ""))
+            if not source or not target:
+                continue
+            try:
+                weight = float(row.get("weight", 1.0))
+            except ValueError:
+                weight = 1.0
+            add_node(graph, source, infer_node_type(source), source, mentions=0)
+            add_node(graph, target, infer_node_type(target), target, mentions=0)
+            add_fact(
+                graph,
+                source,
+                relation,
+                target,
+                clean_text(row.get("evidence", "")),
+                clean_text(row.get("sources", "")),
+                "",
+                weight,
+            )
+    return graph
+
+
 def graph_to_simple(graph: nx.MultiDiGraph, include_documents: bool = False) -> nx.Graph:
     simple = nx.Graph()
     for node, data in graph.nodes(data=True):
@@ -1046,6 +1148,8 @@ def draw_graph(graph: nx.MultiDiGraph, output_dir: Path, max_nodes: int = 55) ->
 
 class FlatRAG:
     def __init__(self, documents: list[Document]) -> None:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+
         self.chunks: list[dict[str, str]] = []
         for doc in documents:
             sentences = split_sentences(doc.text)
@@ -1083,6 +1187,8 @@ class FlatRAG:
             )
 
     def query(self, question: str, top_k: int = 5) -> list[Evidence]:
+        from sklearn.metrics.pairwise import cosine_similarity
+
         vector = self.vectorizer.transform([question])
         if self.collection is not None:
             result = self.collection.query(
@@ -1375,7 +1481,9 @@ def run_benchmark(
     matcher: EntityMatcher,
     output_dir: Path,
     llm: LLMClient | None = None,
-) -> pd.DataFrame:
+):
+    import pandas as pd
+
     log("Preparing Flat RAG vector store")
     flat = FlatRAG(documents)
     log(f"Flat RAG backend ready: {flat.backend}, chunks={len(flat.chunks)}")
@@ -1431,282 +1539,6 @@ def run_benchmark(
     return dataframe
 
 
-def write_summary_report(
-    documents: list[Document],
-    graph: nx.MultiDiGraph,
-    benchmark: pd.DataFrame,
-    elapsed: float,
-    output_dir: Path,
-) -> None:
-    skipped_docs = [doc.doc_id for doc in documents if doc.skipped_content]
-    relation_counts = Counter(str(data.get("relation", "RELATED_TO")) for _, _, _, data in graph.edges(keys=True, data=True))
-    top_relations = relation_counts.most_common(12)
-    flat_failures = benchmark[benchmark["verdict"].str.contains("Flat RAG weak|GraphRAG better", regex=True)]
-
-    report = f"""# Lab Day 19 - GraphRAG Tech Company Corpus
-
-## 1. Nghien cuu ngan
-
-**Entity Extraction.** LLM phan biet node va thuoc tinh bang schema: node la doi tuong co the lien ket doc lap nhu cong ty, ca nhan, chinh sach, khu vuc; thuoc tinh la gia tri mo ta node nhu ty le %, doanh thu, nam, so xe giao. Trong ban offline nay, schema do duoc mo phong bang entity dictionary va cac rule regex.
-
-**Deduplication.** Khong khử trung lap thi mot thuc the se bi tach thanh nhieu node, vi du `Tesla`, `TSLA`, `Tesla Motors`; ket qua BFS 2-hop se dut mach va dem sai bac lien ket. Pipeline gop alias ve canonical name truoc khi tao edge.
-
-**BFS vs vector search.** Vector search tra ve cac chunk gan nghia nhat voi cau hoi, nhung khong dam bao noi duoc chuoi quan he nhieu buoc. BFS di tu entity chinh trong graph, lay cac hang xom 1-2 hop va giu lai quan he co bang chung, phu hop voi cau hoi can lien ket cong ty - chinh sach - metric - thi truong.
-
-## 2. Moi truong va lua chon cong cu
-
-- Lua chon chinh: NetworkX offline.
-- Thu vien dung trong script: `networkx`, `pandas`, `scikit-learn`, `matplotlib`.
-- Neo4j va NodeRAG khong bat buoc cho ban nop nay. Neu muon dung Neo4j, can cai Neo4j Desktop/Docker va tao database rieng; neu muon dung LLM that, can dat `OPENAI_API_KEY`.
-
-## 3. Pipeline da thuc hien
-
-1. Doc 70 file trong `dataset/`.
-2. Loc noi dung PDF/binary bi hong, nhung van giu metadata title/snippet.
-3. Trich xuat entity theo alias map: company, person, policy, region, concept.
-4. Tao triples gom `MENTIONED_IN`, `CO_OCCURS_WITH` va cac relation co rule nhu `DELIVERED`, `REPORTED_REVENUE`, `HAS_MARKET_SHARE`, `SUBSIDIARY_OF`, `SURPASSED`, `FUNDS`.
-5. Dung GraphRAG query bang cach lay entity trong cau hoi, duyet graph 2-hop, textualize evidence, roi tong hop cau tra loi extractive.
-6. Dung Flat RAG baseline bang TF-IDF chunk retrieval.
-7. Chay 20 cau benchmark va xuat bang so sanh.
-
-## 4. Ket qua indexing
-
-- Documents loaded: {len(documents)}
-- Documents skipped noisy full content: {len(skipped_docs)} ({", ".join(skipped_docs) if skipped_docs else "none"})
-- Graph nodes: {graph.number_of_nodes()}
-- Graph edges/triples: {graph.number_of_edges()}
-- Runtime: {elapsed:.2f} seconds
-- Offline token usage: 0 paid LLM tokens
-
-Top relation counts:
-
-| Relation | Count |
-|---|---:|
-"""
-
-    for relation, count in top_relations:
-        report += f"| {relation} | {count} |\n"
-
-    report += """
-## 5. Benchmark Flat RAG vs GraphRAG
-
-Bang day du nam tai `outputs/benchmark_results.csv`. Tom tat:
-
-| # | Question | Flat score | GraphRAG score | Verdict |
-|---:|---|---:|---:|---|
-"""
-
-    for idx, row in benchmark.iterrows():
-        question = str(row["question"]).replace("|", "\\|")
-        report += (
-            f"| {idx + 1} | {question} | {row['flat_score']} | "
-            f"{row['graphrag_score']} | {row['verdict']} |\n"
-        )
-
-    report += """
-## 6. Truong hop Flat RAG yeu/off-context
-
-Vi pipeline offline khong cho LLM sinh tu do, Flat RAG khong 'bia' theo nghia hallucination generation. Thay vao do, cac loi tuong duong duoc ghi la weak/off-context: chunk lay ve khong noi duoc quan he nhieu buoc, hoac thieu entity trung gian ma graph tim duoc.
-
-| Question | GraphRAG evidence edge |
-|---|---|
-"""
-
-    if flat_failures.empty:
-        report += "| None | Benchmark scores were comparable in this deterministic run. |\n"
-    else:
-        for _, row in flat_failures.head(10).iterrows():
-            question = str(row["question"]).replace("|", "\\|")
-            edges = str(row["top_graph_edges"]).replace("|", "<br>")
-            report += f"| {question} | {edges} |\n"
-
-    report += f"""
-## 7. Deliverables
-
-- Source code: `graphrag_lab.py`
-- Knowledge graph image: `outputs/knowledge_graph.png`
-- GraphML file: `outputs/knowledge_graph.graphml`
-- Triples: `outputs/triples.csv`
-- Benchmark table: `outputs/benchmark_results.csv`
-
-## 8. Setup tuy chon neu muon dung LLM/Neo4j
-
-**OpenAI LLM extraction/answering.**
-
-```powershell
-$env:OPENAI_API_KEY="sk-..."
-python -m pip install openai
-```
-
-Sau do co the thay ham rule extraction bang prompt JSON triples. Ban offline hien tai khong gui du lieu ra ngoai va khong ton token.
-
-**Neo4j visualization.**
-
-1. Cai Neo4j Desktop hoac chay Docker Neo4j.
-2. Tao database, ghi lai URI/user/password.
-3. Import `outputs/triples.csv` bang Cypher `LOAD CSV WITH HEADERS`.
-
-Chi phi uoc tinh neu dung LLM that: corpus sau khi loc co the o muc hang tram nghin token; nen chunk 1,000-2,000 token, cache triples theo doc, va chi dung LLM cho extraction thay vi moi query.
-"""
-
-    (output_dir / "REPORT_DAY_19.md").write_text(report, encoding="utf-8")
-
-
-def write_lab_report(
-    documents: list[Document],
-    graph: nx.MultiDiGraph,
-    benchmark: pd.DataFrame,
-    elapsed: float,
-    output_dir: Path,
-    mode: str,
-    llm: LLMClient | None,
-) -> None:
-    skipped_docs = [doc.doc_id for doc in documents if doc.skipped_content]
-    relation_counts = Counter(str(data.get("relation", "RELATED_TO")) for _, _, _, data in graph.edges(keys=True, data=True))
-    top_relations = relation_counts.most_common(12)
-    flat_failures = benchmark[
-        (benchmark.get("flat_hallucination", False) == True)
-        | benchmark["verdict"].astype(str).str.contains("GraphRAG", regex=False)
-    ]
-
-    if llm is None:
-        model_line = "Chế độ offline rule-based, chỉ dùng để smoke test khi chưa có API key."
-        token_line = "Không dùng paid LLM tokens."
-        run_note = (
-            "Lưu ý: report hiện tại được sinh ở chế độ `offline` để kiểm tra kỹ thuật. "
-            "Để có kết quả nộp đúng yêu cầu lab, hãy điền `.env` và chạy `python graphrag_lab.py`."
-        )
-    else:
-        model_line = f"Model extract/answer: `{llm.config.model}`; model judge: `{llm.config.judge_model}`."
-        token_line = f"Ước tính token đã dùng: khoảng {llm.estimated_tokens:,} tokens qua {llm.calls} lời gọi LLM."
-        run_note = "Report này được sinh từ pipeline LLM extraction, LLM answering và LLM-as-judge."
-
-    report = f"""# Lab Day 19 - Xây dựng hệ thống GraphRAG với Tech Company Corpus
-
-> {run_note}
-
-## 1. Nghiên cứu ngắn
-
-**Entity Extraction.** LLM phân biệt node và thuộc tính bằng schema. Node là đối tượng có thể liên kết độc lập như công ty, cá nhân, chính sách, khu vực; thuộc tính là giá trị mô tả node như tỷ lệ %, doanh thu, năm, số xe giao. Trong pipeline chính của bài này, LLM đọc từng chunk của corpus và trả về triples JSON gồm `source`, `relation`, `target`, type, evidence và confidence.
-
-**Graph Construction và Deduplication.** Nếu không khử trùng lặp, một thực thể sẽ bị tách thành nhiều node, ví dụ `Tesla`, `TSLA`, `Tesla Motors`; khi đó BFS 2-hop có thể đứt mạch và đếm sai bậc liên kết. Pipeline chuẩn hóa relation, gộp edge trùng theo cặp `source-relation-target`, cộng dồn weight/confidence và lưu lại evidence theo document.
-
-**Query Answering.** Flat RAG dùng ChromaDB để tìm chunk gần nhất bằng vector search. GraphRAG trích xuất entity chính trong câu hỏi, tìm node tương ứng trong graph, duyệt các node lân cận trong phạm vi 2-hop, textualize evidence rồi gửi evidence đó cho LLM sinh câu trả lời. Khác biệt chính là Flat RAG tìm đoạn văn tương tự, còn GraphRAG đi theo quan hệ có cấu trúc.
-
-## 2. Môi trường và lựa chọn công cụ
-
-- Lựa chọn graph chính: NetworkX.
-- Flat RAG baseline: ChromaDB vector store với embedding TF-IDF local.
-- LLM extraction/answer/judge: OpenAI-compatible Chat Completions API, cấu hình qua `.env`.
-- Thư viện dùng trong script: `networkx`, `pandas`, `scikit-learn`, `matplotlib`, `chromadb`, `openai`, `python-dotenv`.
-- {model_line}
-
-## 3. Pipeline đã thực hiện
-
-1. Đọc 70 file trong `dataset/`.
-2. Lọc nội dung PDF/binary bị hỏng, nhưng vẫn giữ metadata title/snippet.
-3. Chia tài liệu thành chunk theo cấu hình `GRAPHRAG_CHUNK_CHARS` và `GRAPHRAG_MAX_CHUNKS_PER_DOC`.
-4. Dùng LLM để trích xuất triples từ từng chunk, lưu cache tại `outputs/llm_triples_cache.jsonl`.
-5. Xây dựng knowledge graph bằng NetworkX từ triples LLM.
-6. Với GraphRAG: nhận câu hỏi, tìm entity chính, duyệt graph 2-hop, textualize evidence và gửi cho LLM trả lời.
-7. Với Flat RAG: đưa chunk vào ChromaDB, retrieve chunk liên quan rồi gửi evidence cho LLM trả lời.
-8. Dùng LLM-as-judge để chấm hai câu trả lời, ghi nhận hallucination và verdict.
-
-## 4. Kết quả indexing
-
-- Documents loaded: {len(documents)}
-- Documents skipped noisy full content: {len(skipped_docs)} ({", ".join(skipped_docs) if skipped_docs else "none"})
-- Graph nodes: {graph.number_of_nodes()}
-- Graph edges/triples: {graph.number_of_edges()}
-- Runtime: {elapsed:.2f} seconds
-- Mode: `{mode}`
-- {token_line}
-
-Top relation counts:
-
-| Relation | Count |
-|---|---:|
-"""
-
-    for relation, count in top_relations:
-        report += f"| {relation} | {count} |\n"
-
-    report += """
-## 5. Benchmark Flat RAG vs GraphRAG
-
-Bảng đầy đủ nằm tại `outputs/benchmark_results.csv`. Tóm tắt:
-
-| # | Question | Flat score | GraphRAG score | Flat hallucination | Graph hallucination | Verdict |
-|---:|---|---:|---:|---|---|---|
-"""
-
-    for idx, row in benchmark.iterrows():
-        question = str(row["question"]).replace("|", "\\|")
-        verdict = str(row["verdict"]).replace("|", "/")
-        report += (
-            f"| {idx + 1} | {question} | {row['flat_score']} | {row['graphrag_score']} | "
-            f"{row.get('flat_hallucination', False)} | {row.get('graphrag_hallucination', False)} | {verdict} |\n"
-        )
-
-    report += """
-## 6. Trường hợp Flat RAG yếu hoặc hallucinate
-
-Các dòng dưới đây lấy từ LLM judge. Nếu Flat RAG bị đánh dấu hallucination hoặc GraphRAG thắng nhờ evidence quan hệ nhiều bước, trường hợp đó được liệt kê ở đây.
-
-| Question | GraphRAG evidence edge |
-|---|---|
-"""
-
-    if flat_failures.empty:
-        report += "| None | LLM judge không đánh dấu trường hợp Flat RAG hallucinate rõ ràng trong lần chạy này. |\n"
-    else:
-        for _, row in flat_failures.head(10).iterrows():
-            question = str(row["question"]).replace("|", "\\|")
-            edges = str(row["top_graph_edges"]).replace("|", "<br>")
-            report += f"| {question} | {edges} |\n"
-
-    report += """
-## 7. Deliverables
-
-- Source code: `graphrag_lab.py`
-- Environment template: `.env_example`
-- Knowledge graph image: `outputs/knowledge_graph.png`
-- GraphML file: `outputs/knowledge_graph.graphml`
-- Triples: `outputs/triples.csv`
-- Benchmark table: `outputs/benchmark_results.csv`
-- LLM extraction cache: `outputs/llm_triples_cache.jsonl`
-
-## 8. Cách chạy đúng yêu cầu lab
-
-1. Copy `.env_example` thành `.env`.
-2. Điền `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` và `OPENAI_JUDGE_MODEL`.
-3. Chạy:
-
-```powershell
-python -m pip install -r requirements-lab-day19.txt
-python graphrag_lab.py
-```
-
-Muốn chạy smoke test không cần API key thì dùng:
-
-```powershell
-python graphrag_lab.py --mode offline
-```
-
-## 9. Neo4j visualization tùy chọn
-
-1. Cài Neo4j Desktop hoặc chạy Docker Neo4j.
-2. Tạo database, ghi lại URI/user/password.
-3. Import `outputs/triples.csv` bằng Cypher `LOAD CSV WITH HEADERS`.
-
-## 10. Phân tích chi phí
-
-Chi phí phụ thuộc vào số chunk gửi cho LLM. Script có cache nên lần chạy sau sẽ tái sử dụng triples đã extract. Để giảm chi phí, có thể giảm `GRAPHRAG_MAX_CHUNKS_PER_DOC` hoặc `GRAPHRAG_CHUNK_CHARS`; để tăng độ phủ corpus, tăng hai giá trị đó.
-"""
-
-    (output_dir / "REPORT_DAY_19.md").write_text(report, encoding="utf-8")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a Lab Day 19 GraphRAG pipeline with LLM triple extraction and LLM judging.")
     parser.add_argument("--dataset", type=Path, default=DATASET_DIR)
@@ -1714,17 +1546,48 @@ def main() -> None:
     parser.add_argument("--mode", choices=["llm", "offline"], default="llm", help="Default uses LLM extraction and LLM judge.")
     parser.add_argument("--refresh-cache", action="store_true", help="Ignore cached LLM triples and re-extract from the corpus.")
     parser.add_argument("--no-plot", action="store_true", help="Skip PNG/GraphML visualization.")
-    parser.add_argument("--ask", type=str, default="", help="Run one ad-hoc GraphRAG query after indexing.")
+    parser.add_argument("--ask", type=str, default="", help="Ask one GraphRAG query from existing outputs/triples.csv and exit.")
+    parser.add_argument("--ask-after-build", action="store_true", help="Run the full pipeline first, then ask the query.")
+    parser.add_argument("--ask-use-llm", action="store_true", help="Use the configured LLM to write the ad-hoc answer.")
     args = parser.parse_args()
 
     started = time.perf_counter()
     args.output.mkdir(parents=True, exist_ok=True)
+
+    if args.ask and not args.ask_after_build:
+        log("Ask-only mode: loading existing graph from outputs/triples.csv")
+        matcher = EntityMatcher(ENTITY_DEFINITIONS)
+        graph = load_graph_from_triples(args.output / "triples.csv")
+        seeds, evidence, edges = GraphRAG(graph, matcher).query(args.ask)
+        llm = None
+        if args.ask_use_llm:
+            try:
+                config = load_llm_config(required=True)
+            except RuntimeError as exc:
+                parser.error(str(exc))
+            if config is None:
+                raise RuntimeError("LLM config is required with --ask-use-llm.")
+            llm = LLMClient(config)
+        answer = llm_answer(args.ask, evidence, llm, "GraphRAG") if llm is not None else synthesize_answer(args.ask, evidence)
+        print("\nAd-hoc GraphRAG query")
+        print(f"Question: {args.ask}")
+        print(f"Query entities: {', '.join(seeds) if seeds else 'none'}")
+        print(f"Answer: {answer}")
+        print("Top graph edges:")
+        for edge in edges[:5]:
+            print(f"- {edge['source']} -[{edge['relation']}]-> {edge['target']}")
+        if llm is not None:
+            log(f"LLM calls: {llm.calls}")
+            log(f"Estimated LLM tokens: {llm.estimated_tokens}")
+        log("Ask-only query done; pipeline was not rebuilt.")
+        return
 
     log("Loading documents")
     matcher = EntityMatcher(ENTITY_DEFINITIONS)
     documents = load_documents(args.dataset)
     log(f"Loaded documents: {len(documents)}")
     llm: LLMClient | None = None
+    runtime_estimate: dict[str, float] | None = None
     if args.mode == "llm":
         try:
             config = load_llm_config(required=True)
@@ -1733,6 +1596,23 @@ def main() -> None:
         if config is None:
             raise RuntimeError("LLM config is required in llm mode.")
         log(f"Using LLM mode: model={config.model}, judge_model={config.judge_model}, base_url={config.base_url or 'default'}")
+        runtime_estimate = estimate_llm_work(
+            documents,
+            config,
+            args.output,
+            force_refresh=args.refresh_cache,
+            benchmark_questions=len(BENCHMARK_QUESTIONS),
+        )
+        log(
+            "Runtime estimate: "
+            f"chunks={int(runtime_estimate['total_chunks'])}, "
+            f"cached={int(runtime_estimate['cached_chunks'])}, "
+            f"to_extract={int(runtime_estimate['uncached_chunks'])}, "
+            f"benchmark_llm_calls={int(runtime_estimate['benchmark_calls'])}, "
+            f"total_llm_calls={int(runtime_estimate['total_llm_calls'])}, "
+            f"~{format_duration(runtime_estimate['estimated_seconds'])} "
+            f"at {runtime_estimate['seconds_per_call']:.1f}s/call"
+        )
         llm = LLMClient(config)
         triples = extract_llm_triples(documents, llm, args.output, force_refresh=args.refresh_cache)
         log("Building NetworkX graph from LLM triples")
@@ -1763,11 +1643,12 @@ def main() -> None:
         "model": llm.config.model if llm is not None else None,
         "judge_model": llm.config.judge_model if llm is not None else None,
         "flat_backend": str(benchmark["flat_backend"].iloc[0]) if not benchmark.empty and "flat_backend" in benchmark else None,
+        "runtime_estimate": runtime_estimate,
     }
     (args.output / "run_metadata.json").write_text(json.dumps(run_metadata, indent=2, ensure_ascii=False), encoding="utf-8")
     log("Pipeline artifacts written. Run generate_report.py to create REPORT_DAY_19.md")
 
-    if args.ask:
+    if args.ask and args.ask_after_build:
         seeds, evidence, edges = GraphRAG(graph, matcher).query(args.ask)
         answer = llm_answer(args.ask, evidence, llm, "GraphRAG") if llm is not None else synthesize_answer(args.ask, evidence)
         print("\nAd-hoc GraphRAG query")

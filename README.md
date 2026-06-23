@@ -48,31 +48,43 @@ python graphrag_lab.py
 - `run_metadata.json`: metadata của lần chạy.
 - `llm_triples_cache.jsonl`: cache triples để lần chạy sau đỡ tốn token.
 
-## Sinh report
+Trong lúc chạy, script in log theo từng bước: load dataset, gọi LLM extract triples theo document/chunk, build graph, chạy từng câu benchmark và ghi artifact. Nếu chạy lâu, nhìn log sẽ biết đang kẹt ở bước nào.
 
-Sau khi pipeline chạy xong, tạo báo cáo bằng file riêng:
+Trước khi gọi LLM, script cũng in ước tính runtime:
 
-```powershell
-python generate_report.py
+```text
+Runtime estimate: chunks=..., cached=..., to_extract=..., benchmark_llm_calls=60, total_llm_calls=..., ~... minutes
 ```
 
-File này sẽ đọc các artifact trong `outputs/` và ghi:
+Ước tính này dùng biến `GRAPHRAG_EST_SECONDS_PER_LLM_CALL` trong `.env`. Nếu provider của bạn nhanh/chậm hơn, chỉnh biến này để estimate sát hơn.
 
-- `outputs/REPORT_DAY_19.md`: báo cáo cuối.
 
 ## Smoke test không cần API key
 
-Chỉ dùng để kiểm tra code chạy được, không phải kết quả nộp chính:
+Chỉ dùng để kiểm tra code chạy được, không phải kết quả chính của bài lab:
 
 ```powershell
 python graphrag_lab.py --mode offline
-python generate_report.py
 ```
 
 ## Query thử một câu
 
+Sau khi đã chạy pipeline ít nhất một lần và có `outputs/triples.csv`, dùng:
+
 ```powershell
 python graphrag_lab.py --ask "What is VinFast's relationship with Vingroup and Pham Nhat Vuong?"
+```
+
+Lệnh này chỉ load graph từ `outputs/triples.csv` rồi trả lời, không rebuild graph, không chạy benchmark và không gọi LLM indexing. Nếu muốn dùng LLM để diễn đạt câu trả lời từ evidence đã retrieve, thêm:
+
+```powershell
+python graphrag_lab.py --ask "What is VinFast's relationship with Vingroup and Pham Nhat Vuong?" --ask-use-llm
+```
+
+Nếu muốn rebuild pipeline xong rồi mới hỏi, dùng:
+
+```powershell
+python graphrag_lab.py --ask "What is VinFast's relationship with Vingroup and Pham Nhat Vuong?" --ask-after-build
 ```
 
 ## Ghi chú chi phí
